@@ -162,6 +162,8 @@ module raymod
     integer, intent(in) :: nl_src,nl_total
     real, intent(in) :: depths(nl_src)
     real, intent(in) :: vp(nl_src)
+    real(wp) :: cosV(nl_src)
+
     real(wp) :: timeP,p0,p_final,p
     real :: cos_t,c_harmonic,weight
     integer :: iters
@@ -197,12 +199,11 @@ module raymod
 
 
         call solve( p0, p_final, iters, debug,depths,vp,src_offset)
+        ! Here we use p_final and calculate the travel times:
+        cosV = sqrt(1-(p_final**2)*vp**2)
+        t_int = depths/(vp*cosV)
+        timeP=sum(t_int)
 
-!        print 11, p_final, iters
-!11      format('solver returns x = ', e22.15, ' after', i3, ' iterations')
- !       fx = costFunc(p_final,depths,vp,src_offset)
- !       print 12, fx
-!12      format('the value of f(x) is ', e22.15)
 
 
 
