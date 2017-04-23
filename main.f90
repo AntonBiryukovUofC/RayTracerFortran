@@ -158,12 +158,14 @@ module raymod
 
     real(wp) function GetPTime(src_depth,src_offset,nl_src,nl_total,vp,depths,p)
 
-    real, intent(in) :: src_depth,src_offset,p
+    real, intent(in) :: src_depth,src_offset
     integer, intent(in) :: nl_src,nl_total
     real, intent(in) :: depths(nl_src)
     real, intent(in) :: vp(nl_src)
-    real(wp) :: timeP
-    real :: cos_t,c_harmonic,p0,weight
+    real(wp) :: timeP,p0,p_final,p
+    real :: cos_t,c_harmonic,weight
+    integer :: iters
+    logical :: debug,P0_bad    ! set to .true. or .false.
 
     if (nl_src == 1) then
         print *, 'Source in the top layer'
@@ -176,6 +178,32 @@ module raymod
         ! Comment / uncomment this line
         p0=p
         p0 = cos_t / c_harmonic*weight
+        print *, c_harmonic
+        print *, p0
+
+        print *, ' '  ! blank line
+		! Check if the p0 estimate is any good :
+        P0_bad=.TRUE.
+
+        do while (P0_bad)
+            if (ISNAN(sum(sqrt(1-(p0**2)*vp**2)))) then
+                p0=p0/2
+                print *,'p0 divided by 2...'
+            else
+                P0_bad = .FALSE.
+                print *,'p0 is good !'
+            end if
+        end do
+
+
+        call solve( p0, p_final, iters, debug,depths,vp,src_offset)
+
+!        print 11, p_final, iters
+!11      format('solver returns x = ', e22.15, ' after', i3, ' iterations')
+ !       fx = costFunc(p_final,depths,vp,src_offset)
+ !       print 12, fx
+!12      format('the value of f(x) is ', e22.15)
+
 
 
     end if
@@ -195,10 +223,16 @@ module raymod
         real, intent(in) :: R
         real(wp), intent(in) :: x
         real(wp) :: sum_term(size(H)),sum_all
+        print *, 'Vi is ', V
+        print *, 'Hi is ', H
+        print *, 'R is ', R
 
         !a = 1-(x**2)*V**2
         sum_term = H*V*x/sqrt(1-(x**2)*V**2)
+        print *,'SumTerm',sum_term
+
         sum_all =  sum(sum_term)
+        print *,'SumAll',sum_all
         costFunc =  R - sum_all
         !costFunc =  0
     end function costFunc
@@ -225,11 +259,15 @@ module raymod
 
 
 
-subroutine solve(f, fp, x0, x, iters, debug)
+subroutine solve(x0, x, iters, debug,H,V,R)
     implicit none
-
-    integer, parameter :: maxiter = 20
-    real(kind=8), parameter :: tol = 1.d-14
+    ! The parameters of the ray-path here
+    real, intent(in) :: H(:)
+    real, intent(in) :: V(:)
+    real, intent(in) :: R
+    ! The solver parameters here
+    integer, parameter :: maxiter = 8
+    real(kind=8), parameter :: tol = 1.d-2
     ! Estimate the zero of f(x) using Newton's method.
     ! Input:
     !   f:  the function to find a root of
@@ -240,7 +278,6 @@ subroutine solve(f, fp, x0, x, iters, debug)
     !   the estimate x satisfying f(x)=0 (assumes Newton converged!)
     !   the number of iterations iters
     real(kind=8), intent(in) :: x0
-    real(kind=8), external :: f, fp
     logical, intent(in) :: debug
     real(kind=8), intent(out) :: x
     integer, intent(out) :: iters
@@ -248,6 +285,12 @@ subroutine solve(f, fp, x0, x, iters, debug)
     ! Declare any local variables:
     real(kind=8) :: deltax, fx, fxprime
     integer :: k
+
+    ! Check the HVR:
+   ! print *, 'Vi is ', V
+   ! print *, 'Hi is ', H
+   ! print *, 'R is ', R
+
 
 
     ! initial guess
@@ -263,8 +306,10 @@ subroutine solve(f, fp, x0, x, iters, debug)
     do k=1,maxiter
 
         ! evaluate function and its derivative:
-        fx = f(x)
-        fxprime = fp(x)
+        fx = costFunc(x,H,V,R)
+        print *,'FX=',fx
+        fxprime = costFunc_Prime(x,H,V)
+        print *,'Fprime=',fxprime
 
         if (abs(fx) < tol) then
             exit  ! jump out of do loop
@@ -287,7 +332,7 @@ subroutine solve(f, fp, x0, x, iters, debug)
     if (k > maxiter) then
         ! might not have converged
 
-        fx = f(x)
+        fx = costFunc(x,H,V,R)
         if (abs(fx) > tol) then
             print *, '*** Warning: has not yet converged'
             endif
@@ -317,7 +362,8 @@ program RAYTRC
     real, DIMENSION(:, :), ALLOCATABLE :: src,st
 
     real, DIMENSION(:), allocatable :: src_offset,src_depth
-    real :: dph,timeP,p
+    real :: dph
+    real(wp) :: timeP,p
     ! Here is the model description:
     real, DIMENSION(:), allocatable :: vels,depths,vels_new,depths_new
     integer NLayers, k, AllocateStatus,nl
@@ -337,7 +383,7 @@ program RAYTRC
     ALLOCATE ( depths_new(NLayers+1), STAT = AllocateStatus)
     IF (AllocateStatus /= 0) STOP "*** Not enough memory ***"
 
-    vels=(/3100,4470,6200/)
+    vels=(/3100,3270,5000/)
     depths=(/2000, 4000/)
 
 
@@ -373,14 +419,17 @@ program RAYTRC
                     NNew = NLayers+1
                     p=1e-5
                     call InsertLayer(vels,depths,NLayers,vels_new,depths_new,NNew,nl,dph)
+                    print *, 'Source in ', nl, ' layer'
+
+                    print *, 'Vels is ', vels_new
+                    print *, 'Depths is ', depths_new
+
                     timeP = GetPTime(dph,src_offset(k),nl,NLayers,vels_new(1:nl),depths_new(1:nl),p)
 
             endif
             !timeP=GetPTime(dph,src_offset(k),nl,NLayers,vels,depths)
-            print *, 'Source in ', nl, ' layer'
             print *, 'Time is ', timeP
-            print *, 'Vels is ', vels_new
-            print *, 'Depths is ', depths_new
+
 
 
     end do
