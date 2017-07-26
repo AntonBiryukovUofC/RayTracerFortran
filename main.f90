@@ -3,7 +3,7 @@ module raymod
 
    implicit none
    private
-   public :: GETSR,whichLayer,GetPTime, InsertLayer,costFunc,costFunc_Prime,solve
+   public :: GETSR,whichLayer,GetPTime, InsertLayer,costFunc,costFunc_Prime,solve, DoFullForwardProblem
    contains
     subroutine GETSR(src,st,src_offset,src_depth)
 
@@ -124,12 +124,17 @@ module raymod
     subroutine InsertLayer(vels,depths,NLayers,vels_new,depths_new,NNew,nl,dph)
 
     use iso_fortran_env, only: wp => real64
-
+    integer AllocateStatus
     integer, intent(in) :: NLayers,NNew,nl
     real, intent(in) :: depths(NLayers)
     real, intent(in) :: vels(NLayers+1)
-    real, intent(out) :: vels_new(NNew+1),depths_new(NNew)
     real, intent(in) :: dph
+    real, DIMENSION(:)::  vels_new,depths_new
+
+
+
+    !print *,vels,depths,NLayers,vels_new,depths_new,NNew,nl,dph
+  !  print *,vels,depths
     if (nl<NLayers+1) then
             vels_new(1:nl)=vels(1:nl)
             !vels_new(nl+1:NNew+1) = vels(nl:NLayers+1)
@@ -145,8 +150,8 @@ module raymod
             depths_new(nl)=dph
     endif
     ! Differentiate the depths here:
-    depths_new(2:NNew) = depths_new(2:NNew) - depths_new(1:NNew-1)
 
+    depths_new(2:NNew) = depths_new(2:NNew) - depths_new(1:NNew-1)
 
     end subroutine
 
@@ -162,12 +167,13 @@ module raymod
     integer, intent(in) :: nl_src,nl_total
     real, intent(in) :: depths(nl_src)
     real, intent(in) :: vp(nl_src)
-    real(wp) :: cosV(nl_src)
+    real(wp) :: cosV(nl_src),t_int(nl_src)
 
     real(wp) :: timeP,p0,p_final,p
     real :: cos_t,c_harmonic,weight
     integer :: iters
     logical :: debug,P0_bad    ! set to .true. or .false.
+    print *,vp,depths
 
     if (nl_src == 1) then
         print *, 'Source in the top layer'
@@ -206,12 +212,12 @@ module raymod
 
 
 
-
     end if
 
 
 
     GetPTime = timeP
+
     end function GetPTime
 
 
@@ -224,16 +230,16 @@ module raymod
         real, intent(in) :: R
         real(wp), intent(in) :: x
         real(wp) :: sum_term(size(H)),sum_all
-        print *, 'Vi is ', V
-        print *, 'Hi is ', H
-        print *, 'R is ', R
+        !print *, 'Vi is ', V
+        !print *, 'Hi is ', H
+        !print *, 'R is ', R
 
         !a = 1-(x**2)*V**2
         sum_term = H*V*x/sqrt(1-(x**2)*V**2)
-        print *,'SumTerm',sum_term
+      !  print *,'SumTerm',sum_term
 
         sum_all =  sum(sum_term)
-        print *,'SumAll',sum_all
+       ! print *,'SumAll',sum_all
         costFunc =  R - sum_all
         !costFunc =  0
     end function costFunc
@@ -267,7 +273,7 @@ subroutine solve(x0, x, iters, debug,H,V,R)
     real, intent(in) :: V(:)
     real, intent(in) :: R
     ! The solver parameters here
-    integer, parameter :: maxiter = 8
+    integer, parameter :: maxiter = 10
     real(kind=8), parameter :: tol = 1.d-2
     ! Estimate the zero of f(x) using Newton's method.
     ! Input:
@@ -310,7 +316,7 @@ subroutine solve(x0, x, iters, debug,H,V,R)
         fx = costFunc(x,H,V,R)
         print *,'FX=',fx
         fxprime = costFunc_Prime(x,H,V)
-        print *,'Fprime=',fxprime
+      !  print *,'Fprime=',fxprime
 
         if (abs(fx) < tol) then
             exit  ! jump out of do loop
@@ -346,6 +352,122 @@ subroutine solve(x0, x, iters, debug,H,V,R)
 end subroutine solve
 
 
+subroutine DoFullForwardProblem(vels,depths,NLayers,src_offset,src_depth,timeP)
+
+    implicit none
+
+
+
+    real, DIMENSION(:), allocatable :: src_offset,src_depth
+    real :: dph
+    real(wp) :: p
+    real(wp), DIMENSION(:), allocatable :: timeP
+    ! Here is the model description:
+    real, DIMENSION(:),intent(in):: vels,depths
+    real, DIMENSION(:),allocatable:: vels_new,depths_new
+    integer NLayers, k,nl
+    integer NNew,AllocateStatus
+      ! Allocate the velocities and depths
+
+    ALLOCATE ( vels_new(NLayers+2), STAT = AllocateStatus)
+    IF (AllocateStatus /= 0) STOP "*** Not enough memory ***"
+    ALLOCATE ( depths_new(NLayers+1), STAT = AllocateStatus)
+    IF (AllocateStatus /= 0) STOP "*** Not enough memory ***"
+    depths_new=0
+    vels_new=0
+    k=0
+    !NLayers=2
+! Allocate the velocities and depths
+    !ALLOCATE ( vels(NLayers+1), STAT = AllocateStatus)
+    !!IF (AllocateStatus /= 0) STOP "*** Not enough memory ***"
+   ! ALLOCATE ( depths(NLayers), STAT = AllocateStatus)
+   ! IF (AllocateStatus /= 0) STOP "*** Not enough memory ***"
+
+    ! Allocate the velocities and depths
+    !ALLOCATE ( vels_new(NLayers+2), STAT = AllocateStatus)
+    !IF (AllocateStatus /= 0) STOP "*** Not enough memory ***"
+    !ALLOCATE ( depths_new(NLayers+1), STAT = AllocateStatus)
+    !IF (AllocateStatus /= 0) STOP "*** Not enough memory ***"
+
+!!!!!!!! Allocate the array of times:
+
+
+
+
+    print *,' offsets '
+    do k=1,size(src_offset)
+            print *, src_offset(k)
+    end do
+
+    !print *,' depths '
+
+    do k=1,size(src_depth)
+            print *, src_depth(k)
+    end do
+
+
+    ALLOCATE ( timeP(size(src_depth)), STAT = AllocateStatus)
+    IF (AllocateStatus /= 0) STOP "*** Not enough memory ***"
+
+!    print *,' depths '
+
+    do k=1,size(src_depth)
+            dph = src_depth(k)
+            nl = whichLayer(depths,dph)
+
+            if (nl == 1) then
+                    print *,'Source in ',nl, ' layer'
+                    p=0.011
+                    timeP(k) = GetPTime(dph,src_offset(k),nl,NLayers,vels,depths,p)
+
+                else
+                    ! Here we need to pick Hi,Vi by introducing a new layer
+                    NNew = NLayers+1
+                    p=1e-5
+                    print *, 'Vels is ', vels
+                    print *, 'Depths is ', depths
+                    print *,NLayers,NNew
+
+                    call InsertLayer(vels,depths,NLayers,vels_new,depths_new,NNew,nl,dph)
+
+                    print *, 'Source in ', nl, ' layer'
+
+                    print *, 'Vels is ', vels_new
+                    print *, 'Depths is ', depths_new
+
+                    timeP(k) = GetPTime(dph,src_offset(k),nl,NLayers,vels_new(1:nl),depths_new(1:nl),p)
+
+
+            endif
+            !timeP=GetPTime(dph,src_offset(k),nl,NLayers,vels,depths)
+            print *, 'Time is ', timeP(k)
+            print *, '--------------------------------------'
+            print *, '--------------------------------------'
+            print *, '--------------------------------------'
+
+
+
+
+
+
+    end do
+
+
+
+
+
+
+
+
+
+
+
+
+end subroutine
+
+
+
+
 
 
 
@@ -357,18 +479,17 @@ end module raymod
 program RAYTRC
     use iso_fortran_env, only: wp => real64
 
-    use raymod, only: GETSR,whichLayer,GetPTime,InsertLayer
+    use raymod, only: GETSR,whichLayer,GetPTime,InsertLayer,DoFullForwardProblem
     implicit none
 
     real, DIMENSION(:, :), ALLOCATABLE :: src,st
 
     real, DIMENSION(:), allocatable :: src_offset,src_depth
-    real :: dph
-    real(wp) :: timeP,p
+    real(wp), DIMENSION(:), allocatable :: timeP
+
     ! Here is the model description:
     real, DIMENSION(:), allocatable :: vels,depths,vels_new,depths_new
-    integer NLayers, k, AllocateStatus,nl
-    integer NNew
+    integer NLayers, k, AllocateStatus
     k=0
     NLayers=2
 
@@ -390,50 +511,10 @@ program RAYTRC
 
     ! Get the arrays src (Neq x 3) , and st (Nst x 3) with coordinates of the stations and the receivers:
     call GETSR(src,st,src_offset,src_depth)
+    print *,"YAHOOO"
+    call DoFullForwardProblem(vels,depths,NLayers,src_offset,src_depth,timeP)
     !
 
-
-
-
-    print *,' offsets '
-    do k=1,size(src_offset)
-            print *, src_offset(k)
-    end do
-
-    print *,' depths '
-
-    do k=1,size(src_depth)
-            print *, src_depth(k)
-    end do
-
-    print *,' depths '
-
-    do k=1,size(src_depth)
-            dph = src_depth(k)
-            nl = whichLayer(depths,dph)
-            if (nl == 1) then
-                    !print *,'Source in ',nl, ' layer'
-                    p=0.011
-                    timeP = GetPTime(dph,src_offset(k),nl,NLayers,vels,depths,p)
-                else
-                    ! Here we need to pick Hi,Vi by introducing a new layer
-                    NNew = NLayers+1
-                    p=1e-5
-                    call InsertLayer(vels,depths,NLayers,vels_new,depths_new,NNew,nl,dph)
-                    print *, 'Source in ', nl, ' layer'
-
-                    print *, 'Vels is ', vels_new
-                    print *, 'Depths is ', depths_new
-
-                    timeP = GetPTime(dph,src_offset(k),nl,NLayers,vels_new(1:nl),depths_new(1:nl),p)
-
-            endif
-            !timeP=GetPTime(dph,src_offset(k),nl,NLayers,vels,depths)
-            print *, 'Time is ', timeP
-
-
-
-    end do
 
 
 end program

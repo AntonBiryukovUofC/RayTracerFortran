@@ -1,0 +1,184 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Load all the libraries first:
+```{r}
+library(dplyr)
+library(adaptMCMC)
+library(ggplot2)
+library(reshape2)
+library(GGally)
+library(scales)
+```
+
+Load the ray-tracer function from the shared object Fortran:
+
+```{r}
+setwd('/home/geoanton/RayTracerFortran/RayTracer/')
+dyn.load("./subroutineR.so")
+
+
+
+
+#srcd <- src.df$z
+#srco <- sqrt(src.df$x**2+src.df$y**2)
+
+
+
+```
+
+Set up the subsurface layered model:
+
+```{r}
+# The velocity model : v -vels, d - depths of the interfaces
+v = c(2100,3270,4070)
+d= c(2000, 4000)
+NLayers <- length(d)
+
+```
+
+Set up the source-receiver pairs :
+```{r}
+#src.df <- read.csv('/home/geoanton/WI_modeling/eqdf.csv',header=T)
+set.seed(11)
+nstation <- 50
+src.df <- data.frame(x = runif(n=nstation,min=300,max = 8000),y = runif(n=nstation,min=300,max = 8000),z = runif(n=nstation,min=1500,max = 6000) )
+srcd <- src.df$z
+srco <- round(sqrt(src.df$x**2+src.df$y**2))
+write.csv(src.df,file = "eqdf2.csv")
+NSrc <- length(srcd)
+
+
+```
+
+Run the forward problem :
+```{r}
+vv <- c(2100.00,3270.00)
+dd <- c(2000.00,416.57)
+R <- 2940
+xx <- seq(1e-4,1/max(vv)-1e-10 , length.out = 500)
+cf <- sapply(xx, function(x){ R - sum(dd*vv*x/sqrt(1-(x**2)*vv**2))})
+
+qplot(x=xx,y=cf,geom="line")
+
+```
+
+```{r, include=TRUE}
+timeP <- rep(0,NSrc)
+#capture.output(
+t1 <- Sys.time()
+for (i in seq(150))
+{
+timeP.list <-  .Fortran(
+                  "dff" ,vels=as.numeric(v),depths=as.numeric(d),NLayers=as.integer(NLayers),
+                  src_offset=as.numeric(srco),src_depth=as.numeric(srcd),NSrc=as.integer(NSrc),
+                  timeP = as.numeric(timeP)
+                  )
+timeP <- timeP.list$timeP
+}
+t2 <- Sys.time()
+#file = "FortranOutput.txt"
+#)
+
+#data = timeP$timeP
+```
+
+
+```{r}
+data[is.na(data)] = 200
+df <- data.frame(x = srco,y=srcd,c = data)
+
+ggplot(data =df,aes(x=x,y=y,colour = c)) + geom_point(size = 5)
+```
+
+
+
+```{r}
+getData <- function(t=seq(1,500),kx = 0.008,k=100,sY=5,sX=10,sigma = 7)
+{
+  noise =rnorm(length(t) , mean=0,sd=sigma)
+  y = k*exp(-kx*(t-sX)) + sY + noise
+  return(y)
+}
+
+priorTest <- function(x)
+# x = c(k,kx,sX,sY)
+{
+p.k = dunif(x[1], min = 0,max=200,log = T)
+p.kx = dunif(x[2], min =0, max = 0.5,log = T)
+p.sX = dunif(x[3], min =-5, max=20,log = T)
+p.sY = dunif(x[4], min =-5, max=10,log = T)
+p.all = p.k+p.kx+p.sY+p.sX
+return(p.all)
+}
+likelihood <- function(true.data,pred.data,sigma.inv.data,sigma.det)
+{
+  dr <-  pred.data - true.data
+  #print(dr)
+
+  N <- length(dr)
+  res.norm <- dr %*% sigma.inv.data %*% dr
+  print(res.norm)
+  ll <- -N*log((sqrt(2*pi))) - sigma.det - 0.5*res.norm
+  return(ll)
+}
+posterior <- function(x,t,true.data,sigma.inv.data,sigma.det)
+{
+  pred.data <- getData(t=t,k=x[1],kx=x[2],sX=x[3],sY=x[4],sigma=0)
+  ll <- likelihood(true.data = true.data,pred.data = pred.data,
+                   sigma.inv.data=sigma.inv.data,sigma.det = sigma.det)
+  lpr <- priorTest(x)
+  
+  lpost <- ll+lpr
+  
+  
+}
+
+t = seq(1,500,by=5)
+s=20
+y <- getData(t,sigma = s)
+true.data <- y
+qplot(t,y)
+sigma.data <- diag(rep((1.2*s)**2,length(t)))
+sigma.inv.data <- solve(sigma.data)
+sigma.det <- determinant(sigma.data)$modulus
+#print(sigma.data)
+init.val <-  c(50,0.005,12,0)
+scale.x <- c(15,0.002,2,1)**2
+pred.data <- getData(t=t,k=init.val[1],kx=init.val[2],sX=init.val[3],sY=init.val[4],sigma=0)
+mcchain <- MCMC(p = posterior, n = 20000, init = init.val, scale = scale.x,
+                adapt = TRUE, acc.rate = 0.3, gamma = 0.6,
+                list = TRUE, showProgressBar=TRUE, n.start = 300, t,true.data,sigma.inv.data,sigma.det)
+#qplot(t,pred.data)
+#print(pred.data)
+
+
+```
+
+Plots below:
+```{r}
+samples <-data.frame(k = mcchain$samples[,1],kx= mcchain$samples[,2],sX = mcchain$samples[,3], sY = mcchain$samples[,4],id = seq(nrow(mcchain$samples)) )
+
+p <- samples %>% select(-id) %>% ggpairs()
+
+samples.melted <- (melt(samples,measure.vars = c('k','kx','sX','sY') ,id.vars = "id" ))
+print(mcchain$acceptance.rate)
+print(p)
+pc <- ggplot(data=samples.melted,aes(x=id,y=value)) + facet_grid(variable~.,scales = "free_y") + geom_line()
+print(pc)
+
+```
+
+To coda object
+```{r}
+
+coda.sample <- convert.to.coda(mcchain)
+plot(coda.sample)
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
