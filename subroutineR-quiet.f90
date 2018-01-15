@@ -334,9 +334,9 @@ subroutine solvebst(x1,x2,x,iters, debug,H,V,R)
     integer :: k
     fmid = costFunc(x2,H,V,R)
     f = costFunc(x1,H,V,R)
-    if (f*fmid >=0) then
-        print *,'Function is not changing sign!!!'
-    end if
+   ! if (f*fmid >=0) then
+     !   print *,'Function is not changing sign!!!'
+   ! end if
     ! orienting the search so that f >0 lies at x + dx
     if (f<0) then
         x=x1
