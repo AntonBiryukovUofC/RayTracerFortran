@@ -7,5 +7,9 @@ The main purpose of Ray Tracing here is to be super quick for the particular cas
 # Usage
 
 The repository contains both the scripts that invoke the "workhorse" functions, as well as the functions themselves.
+First, you have to compile them so R can recognise the functions from the compiled shared objects:
+- compile the function codes with `R CMD SHLIB subroutineR-quiet.f90`
+
+
 
 I will populate later this section, after I "clean" this repository.

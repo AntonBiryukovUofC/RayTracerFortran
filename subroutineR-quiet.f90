@@ -379,11 +379,11 @@ subroutine solvebst(x1,x2,x,iters, debug,H,V,R)
         endif
 
 
-        
+
 
         enddo
 
- 
+
 
     ! number of iterations taken:
     iters = k-1
@@ -413,7 +413,7 @@ subroutine dofullforwardproblem(vels,depths,NLayers,src_offset,src_depth,NSrc,ti
     double precision, DIMENSION(NLayers+2):: vels_new
     double precision, DIMENSION(NLayers+1):: depths_new
     integer NNew,AllocateStatus
-      
+
     depths_new=0
     vels_new=0
     k=0
@@ -422,7 +422,7 @@ subroutine dofullforwardproblem(vels,depths,NLayers,src_offset,src_depth,NSrc,ti
 
 
 
-  
+
 
 
 
@@ -444,26 +444,18 @@ subroutine dofullforwardproblem(vels,depths,NLayers,src_offset,src_depth,NSrc,ti
                    ! print *, 'Vels is ', vels
                   !  print *, 'Depths is ', depths
                   !  print *,NLayers,NNew
-
                     call InsertLayer(vels,depths,NLayers,vels_new,depths_new,NNew,nl,dph)
-
                    ! print *, 'Source in ', nl, ' layer'
-
                    ! print *, 'Vels is ', vels_new
                     !print *, 'Depths is ', depths_new
                    ! print *, 'Calculating time'
                     timeP(k) = GetPTime(dph,src_offset(k),nl,NLayers,vels_new(1:nl),depths_new(1:nl),p)
-
-
             endif
             !timeP=GetPTime(dph,src_offset(k),nl,NLayers,vels,depths)
            ! print *, 'Time is ', timeP(k)
            ! print *, '--------------------------------------'
            ! print *, '--------------------------------------'
            ! print *, '--------------------------------------'
-
-
-
     end do
 end subroutine
 

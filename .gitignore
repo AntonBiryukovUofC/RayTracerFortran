@@ -33,3 +33,9 @@ build
 doc
 lib
 bin
+
+# CSV modules for fortran
+csv_*.*
+
+# Chain results
+chain.csv

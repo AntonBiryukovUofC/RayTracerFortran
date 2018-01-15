@@ -1,7 +1,7 @@
 setwd('/home/geoanton/RayTracerFortran/RayTracer/')
 
-dyn.load("./subroutineR.so")
-src.df <- read.csv('/home/geoanton/WI_modeling/eqdf.csv',header=T)
+dyn.load("./subroutineR-quiet.so")
+src.df <- read.csv('/home/geoanton/RayTracerFortran/RayTracer/eqdf.csv',header=T)
 srcd <- src.df$z
 srco <- sqrt(src.df$x**2+src.df$y**2)
 v = c(3100,3270,5000)
