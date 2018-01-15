@@ -7,9 +7,16 @@ The main purpose of Ray Tracing here is to be super quick for the particular cas
 # Usage
 
 The repository contains both the scripts that invoke the "workhorse" functions, as well as the functions themselves.
-First, you have to compile them so R can recognise the functions from the compiled shared objects:
-- compile the function codes with `R CMD SHLIB subroutineR-quiet.f90`
 
+
+1. Compile the function codes with `R CMD SHLIB subroutineR-quiet.f90`
+2. In R, load the shared object: `dyn.load("./subroutineR-quiet.so")` 
+3. Call the function in this fashion: `timeP <- .Fortran("dff" ,vels=as.numeric(v),
+										depths=as.numeric(d),NLayers=as.integer(NLayers),
+										src_offset=as.numeric(srco),
+										src_depth=as.numeric(srcd),
+										NSrc=as.integer(NSrc),
+										timeP = as.numeric(timeP))`
 
 
 I will populate later this section, after I "clean" this repository.

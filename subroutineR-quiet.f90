@@ -134,6 +134,7 @@ module raymod
             call solve( p0, p_final, iters, debug,depths,vp,src_offset,conv)
         else
             !print *,'Checks failed to pass...Will do bisect for a little bit, until the jump is safe'
+            ! Basically, that means there will be negative terms under sqrt
             call solvebst( 1d-10,1/maxval(vp)-1d-12,p_final, iters, debug,depths,vp,src_offset)
             !print *,'Bisection moved initial point to new point',p_final
            ! print *,'Bisect took iterations:', iters
@@ -357,7 +358,6 @@ subroutine solvebst(x1,x2,x,iters, debug,H,V,R)
         if (fmid == 0) then
         exit
         endif
-
         fx = costFunc(xmid,H,V,R)
         !print *,'Bisect FX=',fx
         fxprime = costFunc_Prime(xmid,H,V)
@@ -377,10 +377,6 @@ subroutine solvebst(x1,x2,x,iters, debug,H,V,R)
         if (abs(fmid) < tol) then
             exit  ! jump out of do loop
         endif
-
-
-
-
         enddo
 
 
@@ -418,14 +414,6 @@ subroutine dofullforwardproblem(vels,depths,NLayers,src_offset,src_depth,NSrc,ti
     vels_new=0
     k=0
     timeP=-1
-
-
-
-
-
-
-
-
 !    print *,' depths '
 
     do k=1,size(src_depth)
