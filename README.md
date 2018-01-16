@@ -1,3 +1,5 @@
+![Image of Raytracing](https://github.com/AntonBiryukovUofC/RayTracerFortran/blob/master/pngs/ray_example.png)
+
 # Ray Tracing in Fortran with Tomography
 
 This repository contains the codes for running ray tracing in 1D layered cake model, implemented in Fortran. There are multiple alternatives with better usage / more user-friendly interface to my codes; though they are also "heavier" to leverage MCMC seismic tomography.
