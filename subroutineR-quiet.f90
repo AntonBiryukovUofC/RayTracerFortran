@@ -74,14 +74,14 @@ module raymod
 ! This function actually calculates the travel time given the velocities ,depths
 
 
-    double precision function GetPTime(src_depth,src_offset,nl_src,nl_total,vp,depths,p)
+    double precision function GetPTime(src_depth,src_offset,nl_src,nl_total,vp,depths,p,keep_delta)
 
     double precision, intent(in) :: src_depth,src_offset
     integer, intent(in) :: nl_src,nl_total
     double precision, intent(in) :: depths(nl_src)
     double precision, intent(in) :: vp(nl_src)
-    double precision :: cosV(nl_src),t_int(nl_src)
-
+    double precision :: cosV(nl_src),t_int(nl_src), d(nl_src)
+    integer, intent(in) :: keep_delta
     double precision :: timeP,p0,p_final,p,cf,cfp,check_x
     double precision :: cos_t,c_harmonic,weight=1
     integer :: iters
@@ -144,8 +144,16 @@ module raymod
        ! print *,conv
         ! Here we use p_final and calculate the travel times:
         cosV = sqrt(1-(p_final**2)*vp**2)
+        if (keep_delta > 0) then
+           d = sqrt((depths/cosV)**2 - depths**2)
+           open(unit=1,file='rays.dat',form="FORMATTED",status='OLD',action='READWRITE',position='append')
+           write(unit=1,FMT=*) d
+           write(unit=1,FMT=*) depths
+           !write(unit=1,FMT=*) ""
+           close(1)
+        end if
         t_int = depths/(vp*cosV)
-        timeP=sum(t_int)
+        timeP = sum(t_int)
         if (.not.(conv)) then
             timeP = -999
         end if
@@ -392,13 +400,14 @@ end subroutine solvebst
 
 
 
-subroutine dofullforwardproblem(vels,depths,NLayers,src_offset,src_depth,NSrc,timeP) bind(C, name="dff_")
+subroutine dofullforwardproblem(vels,depths,NLayers,src_offset,src_depth,NSrc,timeP,keep_delta) bind(C, name="dff_")
 
 
     use, intrinsic :: iso_c_binding, only : c_double, c_int
 
     integer(c_int),intent(in) :: NLayers,NSrc
     integer ::  k,nl
+    integer(c_int), intent(in) :: keep_delta
     real(c_double), DIMENSION(NSrc):: src_offset,src_depth
     double precision :: dph
     double precision :: p
@@ -415,7 +424,8 @@ subroutine dofullforwardproblem(vels,depths,NLayers,src_offset,src_depth,NSrc,ti
     k=0
     timeP=-1
 !    print *,' depths '
-
+    open(unit=1,file='rays.dat',form="FORMATTED",status='REPLACE',action='READWRITE')
+    close(1)
     do k=1,size(src_depth)
             dph = src_depth(k)
             nl = whichLayer(depths,dph)
@@ -423,7 +433,7 @@ subroutine dofullforwardproblem(vels,depths,NLayers,src_offset,src_depth,NSrc,ti
             if (nl == 1) then
                    ! print *,'Source in ',nl, ' layer'
                     p=0.011
-                    timeP(k) = GetPTime(dph,src_offset(k),nl,NLayers,vels,depths,p)
+                    timeP(k) = GetPTime(dph,src_offset(k),nl,NLayers,vels,depths,p,keep_delta)
 
                 else
                     ! Here we need to pick Hi,Vi by introducing a new layer
@@ -437,7 +447,7 @@ subroutine dofullforwardproblem(vels,depths,NLayers,src_offset,src_depth,NSrc,ti
                    ! print *, 'Vels is ', vels_new
                     !print *, 'Depths is ', depths_new
                    ! print *, 'Calculating time'
-                    timeP(k) = GetPTime(dph,src_offset(k),nl,NLayers,vels_new(1:nl),depths_new(1:nl),p)
+                    timeP(k) = GetPTime(dph,src_offset(k),nl,NLayers,vels_new(1:nl),depths_new(1:nl),p,keep_delta)
             endif
             !timeP=GetPTime(dph,src_offset(k),nl,NLayers,vels,depths)
            ! print *, 'Time is ', timeP(k)

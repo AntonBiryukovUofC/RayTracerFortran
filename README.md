@@ -19,4 +19,4 @@ The repository contains both the scripts that invoke the "workhorse" functions, 
 										timeP = as.numeric(timeP))`
 
 
-I will populate later this section, after I "clean" this repository.
+I will populate later this section, after I "clean" this repository. For now, look at the details in **rayTracerR.R**.
