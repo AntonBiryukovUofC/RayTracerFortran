@@ -1,0 +1,12 @@
+FC    = mpif90 -O3 -mkl
+FCSWD = mpif90 -O3
+FCRS  = mpif90 -O3
+#FC    = mpif90 -check all -mkl
+#FCSWD = mpif90 -check all
+#FCRS  = mpif90 -check all
+#FC    = mpif90 -C -L/usr/lib -llapack -lblas
+#FC    = mpif90 -fc=pgfortran -L/usr/lib -llapack -lblas -fast -O4 -fastsse
+#FCSWD = mpif90 -fc=pgfortran -C
+#FCSWD = mpif90 -fc=pgfortran -fast -O4 -fastsse
+#FCRS  = mpif90 -fc=pgfortran -C
+#FCRS  = mpif90 -fc=pgfortran -fast -O4 -fastsse
