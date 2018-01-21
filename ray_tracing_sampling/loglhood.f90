@@ -9,19 +9,19 @@ USE MPI
 IMPLICIT NONE
 INTEGER(KIND=IB):: ipred
 TYPE (objstruc) :: obj
-REAL(KIND=RP)   :: logL_RV, logL_SWD
+REAL(KIND=RP)   :: logL_RT
 
 !! log likelihood SWD data
-IF(I_SWD == 1)THEN
-  CALL LOGLHOOD_SWD(obj,ipred,logL_SWD)
+IF(I_RT == 1)THEN
+  CALL LOGLHOOD_RT(obj,ipred,logL_RT)
 ELSE
-  logL_SWD = 0._RP
+  logL_RT = 0._RP
 ENDIF
 
 !!
 !! Joint likelihood (assumes independent errors on the vasious data sets)
 !!
-obj%logL = logL_SWD
+obj%logL = logL_RT
 !IF(obj%logL == 0.)THEN
 !  CALL PRINTPAR(obj)
 !  STOP
@@ -31,7 +31,7 @@ RETURN
 END SUBROUTINE LOGLHOOD
 !!=======================================================================
 
-SUBROUTINE LOGLHOOD_SWD(obj,ipred,logL)
+SUBROUTINE LOGLHOOD_RT(obj,ipred,logL)
 !!=======================================================================
 !!
 !!  Compute predicted SWD data and compute logL_SWD
@@ -41,19 +41,19 @@ USE MPI
 USE ieee_arithmetic
 IMPLICIT NONE
 
-INTEGER(KIND=IB)                      :: ipred,ierr_swd,imod,ibadlogL,ilay
+INTEGER(KIND=IB)                      :: ipred,ierr_rt,imod,ibadlogL,ilay
 TYPE (objstruc)                       :: obj
 REAL(KIND=SP),DIMENSION(maxlay,10)    :: curmod
 REAL(KIND=SP),DIMENSION(maxlay+NPREM,10):: curmod2
-REAL(KIND=SP),DIMENSION(NDAT_SWD)     :: periods,DpredSWD
-REAL(KIND=RP),DIMENSION(NMODE)        :: EtmpSWD
+REAL(KIND=SP),DIMENSION(NDAT_RT)     :: periods,DpredRT
+REAL(KIND=RP),DIMENSION(NMODE)        :: EtmpRT
 REAL(KIND=RP)                         :: logL,factvs,factvpvs
 REAL(KIND=RP)                         :: tstart, tend, tcmp   ! Overall time 
 LOGICAL :: ISNAN
 
 curmod = 0.
 IF(IMAP == 1)THEN
-  PRINT*,'CURMOD IN SWD'
+  PRINT*,'CURMOD IN RT'
   DO ilay=1,obj%nunique+1
     WRITE(*,206)ilay,curmod(ilay,1:10)
   ENDDO
@@ -106,54 +106,54 @@ IF(IMAP == 1)THEN
   !206   FORMAT(I3,10F12.4)
 ENDIF
 
-periods = REAL(obj%periods(1,1:NDAT_SWD),SP)
+periods = REAL(obj%periods(1,1:NDAT_RT),SP)
 !!
 !!  Need to append PREM perturbed by half-space perturbation here to 
 !!  ensure that long period SWD can be properly modelled. 
 !!
 CALL dispersion(obj%nunique+1+NPREM,curmod2(1:obj%nunique+1+NPREM,2)/1000., & 
      curmod2(1:obj%nunique+1+NPREM,3)/1000.,curmod2(1:obj%nunique+1+NPREM,4)/1000.,&
-     curmod2(1:obj%nunique+1+NPREM,1)/1000.,DpredSWD,&
-     periods,NDAT_SWD,ierr_swd)
+     curmod2(1:obj%nunique+1+NPREM,1)/1000.,DpredRT,&
+     periods,NDAT_RT,ierr_rt)
 
-IF(ierr_swd /= 0)THEN
+IF(ierr_rt /= 0)THEN
   logL = -HUGE(1._RP)
   RETURN
 ENDIF
 
-obj%DpredSWD(1,1:NDAT_SWD) = REAL(DpredSWD,RP)
-obj%DresSWD(1,1:NDAT_SWD) = obj%DobsSWD(1,1:NDAT_SWD)-obj%DpredSWD(1,1:NDAT_SWD)
+obj%DpredRT(1,1:NDAT_RT) = REAL(DpredRT,RP)
+obj%DresRT(1,1:NDAT_RT) = obj%DobsRT(1,1:NDAT_RT)-obj%DpredRT(1,1:NDAT_RT)
 
 ibadlogL = 0
 IF(IAR == 1)THEN
-  obj%DarSWD  = 0._RP
+  obj%DarRT  = 0._RP
   !!
   !!  Compute autoregressive model
   !!
-  CALL ARPRED_SWD(obj,1,1,NDAT_SWD)
+  CALL ARPRED_RT(obj,1,1,NDAT_RT)
   !! Recompute predicted data as ith autoregressive model
-  obj%DresSWD = obj%DresSWD-obj%DarSWD
+  obj%DresRT = obj%DresRT-obj%DarRT
 
   !! Check if predicted AR model data are outside max allowed bounds
-  CALL CHECKBOUNDS_ARMXSWD(obj,ibadlogL)
+  CALL CHECKBOUNDS_ARMXRT(obj,ibadlogL)
 ENDIF
 
 !!
 !!  Compute log likelihood
 !!
 IF(ibadlogL == 0)THEN
-  EtmpSWD = 0._RP
+  EtmpRT = 0._RP
   IF(ICOV == 1)THEN
     !!
     !! Sample over sigma (one per mode)
     !!
     DO imod = 1,NMODE
-      EtmpSWD(imod) = LOG(1._RP/(2._RP*PI2)**(REAL(NDAT_SWD,RP)/2._RP)) &
-                    -(SUM(obj%DresSWD(imod,:)**2._RP)/(2._RP*obj%sdparSWD(imod)**2._RP)&
-                    +REAL(NDAT_SWD,RP)*LOG(obj%sdpar_tt(imod)))
+      EtmpRT(imod) = LOG(1._RP/(2._RP*PI2)**(REAL(NDAT_RT,RP)/2._RP)) &
+                    -(SUM(obj%DresRT(imod,:)**2._RP)/(2._RP*obj%sdparRT(imod)**2._RP)&
+                    +REAL(NDAT_RT,RP)*LOG(obj%sdparRT(imod)))
     ENDDO
   ENDIF
-  logL = SUM(EtmpSWD)
+  logL = SUM(EtmpRT)
   IF(ieee_is_nan(logL))THEN
     logL = -HUGE(1._RP)
   ENDIF
@@ -164,7 +164,7 @@ ENDIF
 
 RETURN
 207   FORMAT(500ES18.8)
-END SUBROUTINE LOGLHOOD_SWD
+END SUBROUTINE LOGLHOOD_RT
 !!=======================================================================
 
 SUBROUTINE INTERPLAYER_novar(obj)
@@ -568,7 +568,7 @@ ENDIF
 END SUBROUTINE ARPRED_RF
 !!=======================================================================
 
-SUBROUTINE ARPRED_SWD(obj,ifr,idata,idatb)
+SUBROUTINE ARPRED_RT(obj,ifr,idata,idatb)
 !=======================================================================
 !!
 !! Autoregressive model to model data error correlations.
@@ -580,60 +580,60 @@ IMPLICIT NONE
 TYPE (objstruc)  :: obj
 INTEGER          :: i,j,k,ifr,idata,idatb
 REAL(KIND=RP),DIMENSION(idatb-idata+1)::dres1,dar1
-IF(obj%idxarSWD(ifr) == 1)THEN
+IF(obj%idxarRT(ifr) == 1)THEN
    k = 1
-   obj%DarSWD(ifr,idata)=0._RP          ! Matlab sets first point to zero...
+   obj%DarRT(ifr,idata)=0._RP          ! Matlab sets first point to zero...
 
    !!
    !! Real part:
    !!
    dres1 = 0._RP
-   dres1 = obj%DresSWD(ifr,idata:idatb)
+   dres1 = obj%DresRT(ifr,idata:idatb)
 
    dar1(1)=0._RP          ! Matlab sets first point to zero...
    DO i=2,idatb-idata+1
       dar1(i) = 0
       IF(k >= i)THEN
          DO j=1,i-1
-            dar1(i) = dar1(i) + obj%arparSWD((ifr-1)+j) * dres1(i-j)
+            dar1(i) = dar1(i) + obj%arparRT((ifr-1)+j) * dres1(i-j)
          ENDDO
       ELSE
          DO j=1,k
-            dar1(i) = dar1(i) + obj%arparSWD((ifr-1)+j) * dres1(i-j)
+            dar1(i) = dar1(i) + obj%arparRT((ifr-1)+j) * dres1(i-j)
          ENDDO
       ENDIF
    ENDDO
-   obj%DarSWD(ifr,idata:idatb) = dar1
-   obj%DarSWD(ifr,idata) = 0._RP
-   obj%DarSWD(ifr,idatb) = 0._RP
+   obj%DarRT(ifr,idata:idatb) = dar1
+   obj%DarRT(ifr,idata) = 0._RP
+   obj%DarRT(ifr,idatb) = 0._RP
 ENDIF
-END SUBROUTINE ARPRED_SWD
+END SUBROUTINE ARPRED_RT
 !!=======================================================================
 
-SUBROUTINE CHECKBOUNDS_ARMXRF(obj,ibadlogL)
+!SUBROUTINE CHECKBOUNDS_ARMXRF(obj,ibadlogL)
 !!=======================================================================
-USE DATA_TYPE
-USE RJMCMC_COM
-IMPLICIT NONE
-INTEGER(KIND=IB) :: ifr,ibadlogL
-TYPE(objstruc):: obj
+!USE DATA_TYPE
+!USE RJMCMC_COM
+!IMPLICIT NONE
+!INTEGER(KIND=IB) :: ifr,ibadlogL
+!TYPE(objstruc):: obj
 
-DO ifr = 1,NRF1
-   IF(MAXVAL(obj%DarR(ifr,:)) > armxH)THEN
-      iarfail = iarfail + 1
-      ibadlogL = 1
-   ENDIF
-   IF(MINVAL(obj%DarR(ifr,:)) < -armxH)THEN
-      iarfail = iarfail + 1
-      ibadlogL = 1
-   ENDIF
-ENDDO
+!DO ifr = 1,NRF1
+!   IF(MAXVAL(obj%DarR(ifr,:)) > armxH)THEN
+!      iarfail = iarfail + 1
+!      ibadlogL = 1
+!   ENDIF
+!   IF(MINVAL(obj%DarR(ifr,:)) < -armxH)THEN
+!      iarfail = iarfail + 1
+!      ibadlogL = 1
+!   ENDIF
+!ENDDO
 
-RETURN
-END SUBROUTINE CHECKBOUNDS_ARMXRF
+!RETURN
+!END SUBROUTINE CHECKBOUNDS_ARMXRF
 !!=======================================================================
 
-SUBROUTINE CHECKBOUNDS_ARMXSWD(obj,ibadlogL)
+SUBROUTINE CHECKBOUNDS_ARMXRT(obj,ibadlogL)
 !!=======================================================================
 USE DATA_TYPE
 USE RJMCMC_COM
@@ -642,18 +642,18 @@ INTEGER(KIND=IB) :: ifr,ibadlogL
 TYPE(objstruc):: obj
 
 DO ifr = 1,NMODE
-   IF(MAXVAL(obj%DarSWD(ifr,:)) > armxSWD)THEN
+   IF(MAXVAL(obj%DarRT(ifr,:)) > armxRT)THEN
       iarfail = iarfail + 1
       ibadlogL = 1
    ENDIF
-   IF(MINVAL(obj%DarSWD(ifr,:)) < -armxSWD)THEN
+   IF(MINVAL(obj%DarRT(ifr,:)) < -armxRT)THEN
       iarfail = iarfail + 1
       ibadlogL = 1
    ENDIF
 ENDDO
 
 RETURN
-END SUBROUTINE CHECKBOUNDS_ARMXSWD
+END SUBROUTINE CHECKBOUNDS_ARMXRT
 !=======================================================================
 
 SUBROUTINE LOGLHOOD2(obj)
