@@ -1,0 +1,33 @@
+Within the Chain object structure:
+
+NFP - number of forward params
+objstruc - state of the current chain (sd of data can be treated as hhyperparams)
+DobsR(V) - observed data
+Dres - residuals
+
+Global variables:
+sample - posterior sample
+
+ieee_arithmetic library - for NA / NaN
+
+Objstruc objm - container for swapping
+
+ExploreMH - for hierarchical samples
+ExploreMH_NOVARPAR - simple TransD, complexity of layer parametrization does not change -- My case;
+
+Carry out MH sweep , no b/d
+Do not use EXploreMH_VARPAR!!
+ 
+Compile the code with adjustments in structure
+
+call(dispersion) under likelihood function is where the forward model comes in
+SWD -> ttimes
+
+Drop the non-obvious functions into different source files to simplify things
+
+Hard wire kmin / kmax for a fixed D problem (equal to number of layers !)
+in makefile:
+
+libswd -> my ray tracing codes
+Makefile.compiler - set the compilers to gfortran or pgfortran.
+comment out linear algebra packages

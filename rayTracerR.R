@@ -36,4 +36,4 @@ timeP <- .Fortran("dff" ,vels=as.numeric(v),depths=as.numeric(d),NLayers=as.inte
 rays.df <- read.rays(nrays=NSrc)
 
 p <- ggplot(data=rays.df,aes(x=delta.cum,y=depth.cum,col = factor(ray))) + geom_line() + scale_y_reverse()+geom_point()+geom_hline(yintercept = c(0,d),linetype=2)
-ggsave(p,filename = './png/ray_example.png')
+ggsave(p,filename = './pngs/ray_example.png',width = 7,height = 4)

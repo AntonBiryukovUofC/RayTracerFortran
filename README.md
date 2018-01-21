@@ -22,3 +22,12 @@ The repository contains both the scripts that invoke the "workhorse" functions, 
 
 
 I will populate later this section, after I "clean" this repository. For now, look at the details in **rayTracerR.R**.
+
+# TODO:
+
+## Parallel tempering Fortran codes:
+
+1. READPARFILE() needs adapting for Ray Tracer (RT)
+2. READDATA() needs adapting for Ray Tracer travel times 
+3. Figure out what INTERPLAYER routine does 
+4. Fix PROPOSAL_SDRT() for ray tracing

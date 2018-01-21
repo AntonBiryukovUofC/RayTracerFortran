@@ -7,17 +7,15 @@ MODULE RJMCMC_COM
 !!
 !! General switches
 !!
+!! Below, SWD is replaced with RT (ray tracing)
+!!
    INTEGER(KIND=IB) :: IMAP       !! WRITE REPLICA AND EXIT
    INTEGER(KIND=IB) :: ICOV       !! 0 = Sample implicit over sigma
                                   !! 1 = Sample over sigma
    INTEGER(KIND=IB) :: ENOS       !! 1 = Turn on even numbered order stats
    INTEGER(KIND=IB) :: IPOIPR     !! 1 = Turn on Poisson prior on k
    INTEGER(KIND=IB) :: IAR        !! 1 = Use Autoregressive error model
-   INTEGER(KIND=IB) :: I_VARPAR   !! 1 = invert Radial and Vertical components
    INTEGER(KIND=IB) :: IBD_SINGLE !! 1 = include BD for single parameters onto nodes
-   INTEGER(KIND=IB) :: I_RV       !! 1 = invert Radial and Vertical components
-   INTEGER(KIND=IB) :: I_T        !! 1 = invert Transverse component as well
-   INTEGER(KIND=IB) :: I_SWD      !! 1 = invert SWD data
    INTEGER(KIND=IB) :: iraysum    !! 1 = invert use raysum 0 = use ray3d
    INTEGER(KIND=IB) :: I_VREF     !! 1 = sample VpVs ratio
    INTEGER(KIND=IB) :: I_VPVS     !! 1 = sample VpVs ratio
@@ -29,15 +27,9 @@ MODULE RJMCMC_COM
 !!
 !! Model and data dimensions
 !!
-   INTEGER(KIND=IB)            :: NDAT_SWD     ! Number surface wave dispersion data (phases)
-   INTEGER(KIND=IB)            :: NMODE        ! Number surface wave dispersion modes
-   INTEGER(KIND=IB)            :: NTIME        ! Number time samples
-   INTEGER(KIND=IB)            :: NSRC         ! Number time samples in source-time function
-   INTEGER(KIND=IB)            :: NTIME2       ! Number time samples for zero padded observations
-   INTEGER(KIND=IB)            :: NRRG         ! No. points for convolution HHG
-   INTEGER(KIND=IB)            :: NRGRG        ! No. points for convolution HGHG
    INTEGER(KIND=IB)            :: NLMN         ! Min number of layers
-   INTEGER(KIND=IB)            :: NLMX         ! Max number of layers
+   INTEGER(KIND=IB)            :: NLMN         ! Min number of layers
+   INTEGER(KIND=IB)            :: NRAYS        ! Number of rays to compute in Forward Model
    INTEGER(KIND=IB)            :: NPL          ! No. parameters per layer
 
    CHARACTER(len=64) :: filebasefile      = 'filebase.txt'
@@ -53,24 +45,25 @@ MODULE RJMCMC_COM
   REAL(KIND=SP),DIMENSION(10),PARAMETER:: curmod_glob = (/10000._RP,2600._RP,6000._RP,3600._RP,0._RP,0._RP,0._RP,0._RP,0._RP,0._RP/)
   INTEGER :: raysumfail = 0_IB
   INTEGER :: NTR
-  REAL(KIND=SP),ALLOCATABLE,DIMENSION(:)       :: baz2,slow2,sta_dx,sta_dy
-  INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:)    :: nseg
-  INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:,:,:):: phaselist
   REAL(KIND=SP),ALLOCATABLE,DIMENSION(:,:,:)   :: synth_cart,synth_ph
   INTEGER(KIND=IB)          :: numph,iphase
-  INTEGER(KIND=IB),PARAMETER:: mults   = 2  !! Parameter for multiples in layers
-  INTEGER(KIND=IB),PARAMETER:: out_rot = 1  !! 
-  INTEGER(KIND=IB),PARAMETER:: align   = 1  !! 
-  REAL(KIND=SP)             :: shift2
-  REAL(KIND=SP)             :: sampling_dt
-  REAL(KIND=SP),PARAMETER   :: sig   = 0.01_SP
-  !REAL(KIND=SP),PARAMETER   :: VPVS  = 1.75_RP
-  REAL(KIND=SP)             :: width2             !! Set < 0 to return impulse response
-  REAL(KIND=SP)             :: wl                 !! water-level for ray3d
   REAL(KIND=RP)             :: hmx                !! Max crustal depth in km
   REAL(KIND=RP),DIMENSION(2):: sdmn               !! Min standard deviation
   REAL(KIND=RP),DIMENSION(2):: sdmx               !! Max standard deviation
 
+  !REAL(KIND=SP),ALLOCATABLE,DIMENSION(:)       :: baz2,slow2,sta_dx,sta_dy
+  !INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:)    :: nseg
+  ! INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:,:,:):: phaselist
+  !INTEGER(KIND=IB),PARAMETER:: mults   = 2  !! Parameter for multiples in layers
+  !INTEGER(KIND=IB),PARAMETER:: out_rot = 1  !! 
+  !INTEGER(KIND=IB),PARAMETER:: align   = 1  !! 
+  !REAL(KIND=SP)             :: shift2
+  !REAL(KIND=SP)             :: sampling_dt
+  !REAL(KIND=SP),PARAMETER   :: sig   = 0.01_SP
+  !REAL(KIND=SP),PARAMETER   :: VPVS  = 1.75_RP
+  !REAL(KIND=SP)             :: width2             !! Set < 0 to return impulse response
+  !REAL(KIND=SP)             :: wl                 !! water-level for ray3d
+  
 !!
 !!  Prior variables and good seeding model
 !!
@@ -90,22 +83,25 @@ MODULE RJMCMC_COM
    REAL(KIND=RP)               :: area_bn,area_kskp,area_cr
 !!
 !!  Autoregressive model prior variables:
+!! Below, SWD is replaced with RT (ray tracing)
 !!
    REAL(KIND=RP)              :: armxH      = 0.2_RP           ! Max AR and ARI model range (amplitude units)
    REAL(KIND=RP)              :: armxV      = 0.2_RP           ! Max AR and ARI model range (amplitude units)
    REAL(KIND=RP)              :: armxSWD    = 0.5_RP           ! Max AR and ARI model range (amplitude units)
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: minlimar, maxlimar, maxpertar
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: pertarsd, pertarsdsc
-   REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: minlimarSWD, maxlimarSWD, maxpertarSWD
-   REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: pertarsdSWD, pertarsdscSWD
+   REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: minlimarRT, maxlimarRT, maxpertarRT
+   REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: pertarsdRT, pertarsdscRT
 
 !!
 !!  Standard deviation prior variables:
 !!
+!! Below, SWD is replaced with RT (ray tracing)
+!!
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: minlimsd, maxlimsd, maxpertsd
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: pertsdsd, pertsdsdsc
-   REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: minlimsdSWD, maxlimsdSWD, maxpertsdSWD
-   REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: pertsdsdSWD, pertsdsdscSWD
+   REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: minlimsdRT, maxlimsdRT, maxpertsdRT
+   REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: pertsdsdRT, pertsdsdscRT
 
 !   REAL(KIND=RP),DIMENSION(:),ALLOCATABLE:: fr,fstep   ! Total frequency array
 !   REAL(KIND=RP)               :: z_t
@@ -113,18 +109,18 @@ MODULE RJMCMC_COM
 !   REAL(KIND=RP)               :: rw
    CHARACTER(len=64) :: filebase
    INTEGER(KIND=IB)  :: filebaselen
-   CHARACTER(LEN=100) :: infileV
-   CHARACTER(LEN=100) :: infileH
-   CHARACTER(LEN=100) :: infileT
-   CHARACTER(LEN=100) :: infileSWD
+   !CHARACTER(LEN=100) :: infileV
+   !CHARACTER(LEN=100) :: infileH
+   !CHARACTER(LEN=100) :: infileT
+   CHARACTER(LEN=100) :: infileRT
    CHARACTER(LEN=100) :: infileref
-   CHARACTER(LEN=100) :: repfileR
-   CHARACTER(LEN=100) :: repfileT
-   CHARACTER(LEN=100) :: repfileV
-   CHARACTER(LEN=100) :: repfileS
-   CHARACTER(LEN=100) :: repfileRF
-   CHARACTER(LEN=100) :: repfileSWD
-   CHARACTER(LEN=100) :: repfileSWDar
+   !CHARACTER(LEN=100) :: repfileR
+   !CHARACTER(LEN=100) :: repfileT
+   !CHARACTER(LEN=100) :: repfileV
+   !CHARACTER(LEN=100) :: repfileS
+   !CHARACTER(LEN=100) :: repfileRF
+   CHARACTER(LEN=100) :: repfileRT
+   CHARACTER(LEN=100) :: repfileRTar
    CHARACTER(LEN=100) :: parfile
    CHARACTER(LEN=64) :: logfile
    CHARACTER(LEN=64) :: seedfile
@@ -133,9 +129,9 @@ MODULE RJMCMC_COM
    CHARACTER(LEN=64)  :: obsfile
    CHARACTER(LEN=64)  :: arfile
    CHARACTER(LEN=64)  :: predfile
-   CHARACTER(LEN=64)  :: obsfileSWD
-   CHARACTER(LEN=64)  :: arfileSWD
-   CHARACTER(LEN=64)  :: predfileSWD
+   CHARACTER(LEN=64)  :: obsfileRT
+   CHARACTER(LEN=64)  :: arfileRT
+   CHARACTER(LEN=64)  :: predfileRT
    CHARACTER(len=64) :: sdfile
    CHARACTER(len=64) :: samplefile
    CHARACTER(len=64) :: stepsizefile
@@ -196,6 +192,7 @@ MODULE RJMCMC_COM
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:)   :: sdevm  ! Std dev for perturbations
 !!
 !!  Structures for objects and data 
+!! Below, SWD is replaced with RT (ray tracing)
 !!
   INTEGER :: imcmc1 = 1   !! Counter for models at T=1 (needs to survive checkpointing!)
   INTEGER :: imcmc2 = 1   !! Counter for mcmc steps to scale diminishing adaptation (needs to survive checkpointing!)
@@ -210,12 +207,12 @@ MODULE RJMCMC_COM
       REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: par     ! Forward parameters
       REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: hiface
       REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: ziface
-      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: sdparSWD      !! Std dev SWD data
-      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: sdaveSWD      !! Std dev SWD data
+      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: sdparRT      !! Std dev RT data
+      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: sdaveRT      !! Std dev RT data
       REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: arpar         !! AR model forward parameters
-      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: arparSWD      !! AR model forward parameters
+      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: arparRT      !! AR model forward parameters
       INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:):: idxar      !! AR on/off index (1=on)
-      INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:):: idxarSWD      !! AR on/off index (1=on)
+      INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:):: idxarRT      !! AR on/off index (1=on)
       INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:):: gvoroidx   !! Index of live parameters on birth/death node
       INTEGER(KIND=IB)                        :: nunique     !! 
       INTEGER(KIND=IB)                        :: NFP         !! Number forward parameters
@@ -227,10 +224,10 @@ MODULE RJMCMC_COM
       INTEGER(KIND=IB)                        :: iaccept_bd = 0
       INTEGER(KIND=IB)                        :: ireject_bds = 0
       INTEGER(KIND=IB)                        :: iaccept_bds = 0
-      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: Dobs_tt     !! Observed data SWD
-      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: Dpred_tt    !! Predicted SWD data for trial model
-      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: Dres_tt     !! SWD data residuals for trial model
-      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: Dar_tt      !! SWD autoregressive model predicted data
+      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: DobsRT     !! Observed data RT
+      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: DpredRT    !! Predicted RT data for trial model
+      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: DresRT     !! RT data residuals for trial model
+      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: DarRT      !! RT autoregressive model predicted data
    END TYPE objstruc
 !!
 !! Structure for covariance matrices (only applies for ICOV >= 2)

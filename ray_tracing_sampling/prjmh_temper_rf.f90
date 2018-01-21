@@ -11,7 +11,7 @@
 !  Last change: May 9 2014
 !
 !  Based on Green 1995, Malinverno 2002, Bodin Sambridge 2009, 
-!  Agostinetti Malinverno 2010, Dettmer etal 2010, 2012, 1013
+!  Agostinetti Malinverno 2010, Dettmer etal 2010, 2012, 2013
 !
 !==============================================================================
 
@@ -154,16 +154,11 @@ obj%k       = INT(tmpmap(1),IB)   !! No. interfaces + 1 (e.g. 3 makes 2 layers a
 obj%NFP     = (obj%k * NPL)       !! No. forward parameters; NPL -> max No. parameters per layer
 obj%voro    = 0._RP               !! Main array of layer nodes
 obj%voroidx = 0
-obj%sdparR  = 0._RP
-obj%sdparV  = 0._RP
-obj%sdparT  = 0._RP
 obj%arpar   = 0._RP
-obj%sdparSWD= 0._RP
-obj%arparSWD= 0._RP
+obj%sdparRT= 0._RP
+obj%arparRT= 0._RP
 
-obj%sdaveH  = 0._RP
-obj%sdaveV  = 0._RP
-obj%sdaveSWD= 0._RP
+obj%sdaveRT= 0._RP
 
 DO ivo = 1,obj%k
   ipar = (ivo-1)*NPL+2
@@ -177,20 +172,21 @@ DO ivo = 1,obj%k
     ENDIF
   ENDDO
 ENDDO
-IF(ICOV == 1) obj%sdparR   = tmpmap(NFPMX+1+1:NFPMX+1+NRF1)
-IF(ICOV == 1) obj%sdparV   = tmpmap(NFPMX+1+1+NRF1:NFPMX+1+2*NRF1)
-IF(ICOV == 1) obj%sdparT   = tmpmap(NFPMX+1+1+2*NRF1:NFPMX+1+3*NRF1)
-IF(ICOV == 1) obj%sdparSWD = tmpmap(NFPMX+1+1+3*NRF1:NFPMX+1+3*NRF1+NMODE)
+!IF(ICOV == 1) obj%sdparR   = tmpmap(NFPMX+1+1:NFPMX+1+NRF1)
+!IF(ICOV == 1) obj%sdparV   = tmpmap(NFPMX+1+1+NRF1:NFPMX+1+2*NRF1)
+!IF(ICOV == 1) obj%sdparT   = tmpmap(NFPMX+1+1+2*NRF1:NFPMX+1+3*NRF1)
+IF(ICOV == 1) obj%sdparRT = tmpmap(NFPMX+1+1+3*NRF1:NFPMX+1+3*NRF1+NMODE)
+
 IF(IAR == 1)THEN
   obj%arpar = tmpmap(NFPMX+1+3*NRF1+NMODE+1:NFPMX+3*NRF1+NMODE+3*NRF1+1)
-  obj%arparSWD = tmpmap(NFPMX+1+3*NRF1+NMODE+3*NRF1+1:NFPMX+3*NRF1+NMODE+3*NRF1+NMODE+1)
+  obj%arparRT = tmpmap(NFPMX+1+3*NRF1+NMODE+3*NRF1+1:NFPMX+3*NRF1+NMODE+3*NRF1+NMODE+1)
   obj%idxar = 1
   DO ipar = 1,NRF1
     IF(obj%arpar(ipar) < minlimar(ipar)) obj%idxar(ipar) = 0
   ENDDO
   obj%idxarSWD = 1
   DO ipar = 1,NMODE
-    IF(obj%arparSWD(ipar) < minlimarSWD(ipar)) obj%idxarSWD(ipar) = 0
+    IF(obj%arparRT(ipar) < minlimarRT(ipar)) obj%idxarRT(ipar) = 0
   ENDDO
 ENDIF
 
@@ -250,7 +246,7 @@ IF(IMAP == 1)THEN
    tend2 = MPI_WTIME()
    WRITE(6,*) 'time = ',tend2-tstart2
    WRITE(6,*) 'logL = ',obj%logL
-   CALL SAVEREPLICA(obj,predfile,obsfile,arfile,predfileSWD,obsfileSWD,arfileSWD)
+   CALL SAVEREPLICA(obj,predfile,obsfile,arfile,predfileRT,obsfileRT,arfileRT)
    IF(ioutside == 1)WRITE(*,*)'FAILED in starting model'
   ENDIF
   CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
@@ -475,11 +471,11 @@ IF(ICOV == 1)THEN
   !!
   !! Sample standard deviation of SWD
   !!
-  IF(I_SWD == 1)THEN
+  IF(I_RT == 1)THEN
   CALL RANDOM_NUMBER(ran_uni_ar)
   IF(ran_uni_ar>=0.10_RP)THEN
     DO ipar = 1,NMODE
-      CALL PROPOSAL_SDSWD(obj,objnew1,ipar)
+      CALL PROPOSAL_SDRT(obj,objnew1,ipar)
       IF(ioutside == 0)THEN
         IF(ISMPPRIOR == 0)CALL LOGLHOOD(objnew1,0)
         IF(ISMPPRIOR == 1)CALL LOGLHOOD2(objnew1)
@@ -508,12 +504,12 @@ ENDIF ! ICOV if
 !! Do Metropolis-Hastings on autoregressive model SWD
 !!
 IF(IAR == 1)THEN
-IF(I_SWD == 1)THEN
+IF(I_RT == 1)THEN
   !! Perturb AR model with .25 probability
   CALL RANDOM_NUMBER(ran_uni_ar)
   !IF(ran_uni_ar>=0.25_RP)THEN
     DO ipar = 1,NMODE
-      IF(obj%idxarSWD(ipar) == 0)THEN
+      IF(obj%idxarRT(ipar) == 0)THEN
         !! Propose birth
         arptype = 1
         logarp = LOG(0.5_RP)
@@ -529,7 +525,7 @@ IF(I_SWD == 1)THEN
           logarp = 0._RP
         ENDIF
       ENDIF
-      CALL PROPOSAL_ARSWD(obj,objnew1,ipar,arptype)
+      CALL PROPOSAL_ARRT(obj,objnew1,ipar,arptype)
       IF(ioutside == 0)THEN
         IF(ISMPPRIOR == 0)CALL LOGLHOOD(objnew1,0)
         IF(ISMPPRIOR == 1)CALL LOGLHOOD2(objnew1)
@@ -1423,7 +1419,7 @@ RETURN
 END SUBROUTINE PROPOSAL_ARRF
 !=======================================================================
 
-SUBROUTINE PROPOSAL_ARSWD(obj,objnew,iwhich,arptype)
+SUBROUTINE PROPOSAL_ARRT(obj,objnew,iwhich,arptype)
 !=======================================================================
 USE DATA_TYPE
 USE RJMCMC_COM
@@ -1435,8 +1431,8 @@ REAL(KIND=RP)  :: ran_nor,ran_uni
 !! Birth: sample uniform from prior
 IF(arptype == 1)THEN
   CALL RANDOM_NUMBER(ran_uni)
-  objnew%arparSWD(iwhich) = ran_uni*(maxlimarSWD(iwhich)-minlimarSWD(iwhich))+minlimarSWD(iwhich)
-  objnew%idxarSWD(iwhich) = 1
+  objnew%arparRT(iwhich) = ran_uni*(maxlimarRT(iwhich)-minlimarRT(iwhich))+minlimarRT(iwhich)
+  objnew%idxarRT(iwhich) = 1
   IF(((objnew%arparSWD(iwhich) - minlimarSWD(iwhich)) < 0._RP).OR. &
      ((maxlimarSWD(iwhich) - objnew%arparSWD(iwhich)) < 0._RP))ioutside = 1
 ENDIF
@@ -1457,8 +1453,70 @@ RETURN
 END SUBROUTINE PROPOSAL_ARSWD
 !=======================================================================
 
-SUBROUTINE PROPOSAL_SDH(obj,objnew,iwhich)
+!SUBROUTINE PROPOSAL_SDH(obj,objnew,iwhich)
 !=======================================================================
+!USE DATA_TYPE
+!USE RJMCMC_COM
+!IMPLICIT NONE
+!!INTEGER(KIND=IB) :: iwhich
+!TYPE(objstruc) :: obj,objnew
+!REAL(KIND=RP)  :: ran_nor
+
+!!
+!! Gaussian proposal
+!!
+!CALL GASDEVJ(ran_nor)
+!objnew%sdparR(iwhich) = obj%sdparR(iwhich) + pertsdsd(iwhich)*ran_nor
+!IF(((objnew%sdparR(iwhich) - minlimsd(iwhich)) < 0._RP).OR.((maxlimsd(iwhich) - objnew%sdparR(iwhich)) < 0._RP))ioutside = 1
+
+!RETURN
+!END SUBROUTINE PROPOSAL_SDH
+!=======================================================================
+
+!SUBROUTINE PROPOSAL_SDV(obj,objnew,iwhich)
+!=======================================================================
+!USE DATA_TYPE
+!USE RJMCMC_COM
+!IMPLICIT NONE
+!INTEGER(KIND=IB) :: iwhich
+!TYPE(objstruc) :: obj,objnew
+!REAL(KIND=RP)  :: ran_nor
+
+!!
+!! Gaussian proposal
+!!
+!CALL GASDEVJ(ran_nor)
+!objnew%sdparV(iwhich) = obj%sdparV(iwhich) + pertsdsd(iwhich)*ran_nor
+!IF(((objnew%sdparV(iwhich) - minlimsd(iwhich)) < 0._RP).OR. & 
+!   ((maxlimsd(iwhich) - objnew%sdparV(iwhich)) < 0._RP))ioutside = 1
+
+!RETURN
+!END SUBROUTINE PROPOSAL_SDV
+!=======================================================================
+
+!SUBROUTINE PROPOSAL_SDT(obj,objnew,iwhich)
+!!=======================================================================
+!USE DATA_TYPE
+!USE RJMCMC_COM
+!IMPLICIT NONE
+!INTEGER(KIND=IB) :: iwhich
+!TYPE(objstruc) :: obj,objnew
+!REAL(KIND=RP)  :: ran_nor
+
+!!
+!! Gaussian proposal
+!!
+!CALL GASDEVJ(ran_nor)
+!objnew%sdparT(iwhich) = obj%sdparT(iwhich) + pertsdsd(iwhich)*ran_nor
+!IF(((objnew%sdparT(iwhich) - minlimsd(iwhich)) < 0._RP).OR.((maxlimsd(iwhich) - objnew%sdparT(iwhich)) < 0._RP))ioutside = 1
+
+!RETURN
+!END SUBROUTINE PROPOSAL_SDT
+!=======================================================================
+
+SUBROUTINE PROPOSAL_SDRT(obj,objnew,iwhich)
+!=======================================================================
+
 USE DATA_TYPE
 USE RJMCMC_COM
 IMPLICIT NONE
@@ -1470,70 +1528,9 @@ REAL(KIND=RP)  :: ran_nor
 !! Gaussian proposal
 !!
 CALL GASDEVJ(ran_nor)
-objnew%sdparR(iwhich) = obj%sdparR(iwhich) + pertsdsd(iwhich)*ran_nor
-IF(((objnew%sdparR(iwhich) - minlimsd(iwhich)) < 0._RP).OR.((maxlimsd(iwhich) - objnew%sdparR(iwhich)) < 0._RP))ioutside = 1
-
-RETURN
-END SUBROUTINE PROPOSAL_SDH
-!=======================================================================
-
-SUBROUTINE PROPOSAL_SDV(obj,objnew,iwhich)
-!=======================================================================
-USE DATA_TYPE
-USE RJMCMC_COM
-IMPLICIT NONE
-INTEGER(KIND=IB) :: iwhich
-TYPE(objstruc) :: obj,objnew
-REAL(KIND=RP)  :: ran_nor
-
-!!
-!! Gaussian proposal
-!!
-CALL GASDEVJ(ran_nor)
-objnew%sdparV(iwhich) = obj%sdparV(iwhich) + pertsdsd(iwhich)*ran_nor
-IF(((objnew%sdparV(iwhich) - minlimsd(iwhich)) < 0._RP).OR. & 
-   ((maxlimsd(iwhich) - objnew%sdparV(iwhich)) < 0._RP))ioutside = 1
-
-RETURN
-END SUBROUTINE PROPOSAL_SDV
-!=======================================================================
-
-SUBROUTINE PROPOSAL_SDT(obj,objnew,iwhich)
-!=======================================================================
-USE DATA_TYPE
-USE RJMCMC_COM
-IMPLICIT NONE
-INTEGER(KIND=IB) :: iwhich
-TYPE(objstruc) :: obj,objnew
-REAL(KIND=RP)  :: ran_nor
-
-!!
-!! Gaussian proposal
-!!
-CALL GASDEVJ(ran_nor)
-objnew%sdparT(iwhich) = obj%sdparT(iwhich) + pertsdsd(iwhich)*ran_nor
-IF(((objnew%sdparT(iwhich) - minlimsd(iwhich)) < 0._RP).OR.((maxlimsd(iwhich) - objnew%sdparT(iwhich)) < 0._RP))ioutside = 1
-
-RETURN
-END SUBROUTINE PROPOSAL_SDT
-!=======================================================================
-
-SUBROUTINE PROPOSAL_SDSWD(obj,objnew,iwhich)
-!=======================================================================
-USE DATA_TYPE
-USE RJMCMC_COM
-IMPLICIT NONE
-INTEGER(KIND=IB) :: iwhich
-TYPE(objstruc) :: obj,objnew
-REAL(KIND=RP)  :: ran_nor
-
-!!
-!! Gaussian proposal
-!!
-CALL GASDEVJ(ran_nor)
-objnew%sdparSWD(iwhich) = obj%sdparSWD(iwhich) + pertsdsdSWD(iwhich)*ran_nor
-IF(((objnew%sdparSWD(iwhich) - minlimsdSWD(iwhich)) < 0._RP).OR. &
-   ((maxlimsdSWD(iwhich) - objnew%sdparSWD(iwhich)) < 0._RP))ioutside = 1
+objnew%sdparRT(iwhich) = obj%sdparRT(iwhich) + pertsdsdRT(iwhich)*ran_nor
+IF(((objnew%sdparRT(iwhich) - minlimsdRT(iwhich)) < 0._RP).OR. &
+   ((maxlimsdRT(iwhich) - objnew%sdparRT(iwhich)) < 0._RP))ioutside = 1
 
 RETURN
 END SUBROUTINE PROPOSAL_SDSWD
@@ -1783,7 +1780,7 @@ DO ic = 1,2
 !                          REAL(objm(ic)%ipropose_bd,RP),REAL(i_bd,RP),objm(ic)%tcmp,REAL(isource,RP) /)
 
      sample(ikeep,:) =  (/ objm(ic)%logL, objm(ic)%logPr, objm(ic)%tcmp, REAL(objm(ic)%k,RP), & ! 4 parameters
-                           tmpvoro,objm(ic)%sdparR,objm(ic)%sdparV,objm(ic)%sdparT,objm(ic)%sdparSWD,objm(ic)%arpar,objm(ic)%arparSWD, &
+                           tmpvoro,objm(ic)%sdparRT,objm(ic)%arpar,objm(ic)%arparRT, &
                            REAL(iaccept,RP)/REAL(iaccept+ireject,RP),REAL(objm(ic)%iaccept_bd,RP),&
                            REAL(objm(ic)%ireject_bd,RP),REAL(objm(ic)%iaccept_bds,RP),REAL(ic,RP),REAL(rank,RP) /)
 
@@ -1818,6 +1815,7 @@ CALL FLUSH(6)
 216 FORMAT(a23,F8.2,a)
 RETURN
 END SUBROUTINE SAVESAMPLE
+
 !=======================================================================
 SUBROUTINE SAVEREPLICA(obj)
 !=======================================================================
@@ -1833,91 +1831,91 @@ CALL PRINTPAR(obj)
 WRITE(6,*) 'Global best logL = ',obj%logL
 
 IF(I_RV == 1)THEN
-  OPEN(UNIT=50,FILE=predfile,FORM='formatted',STATUS='REPLACE', &
-  ACTION='WRITE',RECL=8192)
-  DO i = 1,NRF1
-    WRITE(50,208) obj%DpredR(i,:)
-  ENDDO
-  DO i = 1,NRF1
-    WRITE(50,208) obj%DpredV(i,:)
-  ENDDO
-  DO i = 1,NRF1
-    WRITE(50,208) obj%DpredT(i,:)
-  ENDDO
-  DO i = 1,NRF1
-    WRITE(50,208) obj%S(i,:)
-  ENDDO
-  WRITE(6,*)'Done writing predicted V and H components.'
-  CLOSE(50)
+  !OPEN(UNIT=50,FILE=predfile,FORM='formatted',STATUS='REPLACE', &
+  !ACTION='WRITE',RECL=8192)
+!  DO i = 1,NRF1
+ !   WRITE(50,208) obj%DpredR(i,:)
+ ! ENDDO
+ ! DO i = 1,NRF1
+ !   WRITE(50,208) obj%DpredV(i,:)
+ ! ENDDO
+ ! DO i = 1,NRF1
+ !   WRITE(50,208) obj%DpredT(i,:)
+ ! ENDDO
+ ! DO i = 1,NRF1
+ !   WRITE(50,208) obj%S(i,:)
+ ! ENDDO
+  !WRITE(6,*)'Done writing predicted V and H components.'
+  !CLOSE(50)
 
-  OPEN(UNIT=50,FILE=obsfile,FORM='formatted',STATUS='REPLACE', &
-  ACTION='WRITE',RECL=8192)
-  DO i = 1,NRF1
-    WRITE(50,208) obj%DobsR(i,:)
-  ENDDO
-  DO i = 1,NRF1
-    WRITE(50,208) obj%DobsV(i,:)
-  ENDDO
-  DO i = 1,NRF1
-    WRITE(50,208) obj%DobsT(i,:)
-  ENDDO
-  WRITE(6,*)'Done writing observed V and H components.'
-  CLOSE(50)
+  !OPEN(UNIT=50,FILE=obsfile,FORM='formatted',STATUS='REPLACE', &
+  !ACTION='WRITE',RECL=8192)
+  !DO i = 1,NRF1
+  !  WRITE(50,208) obj%DobsR(i,:)
+  !ENDDO
+ ! DO i = 1,NRF1
+  !  WRITE(50,208) obj%DobsV(i,:)
+  !ENDDO
+  !DO i = 1,NRF1
+  !  WRITE(50,208) obj%DobsT(i,:)
+  !ENDDO
+  !WRITE(6,*)'Done writing observed V and H components.'
+  !CLOSE(50)
 
-  OPEN(UNIT=50,FILE=arfile,FORM='formatted',STATUS='REPLACE', &
-  ACTION='WRITE',RECL=8192)
-  DO i = 1,NRF1
-    WRITE(50,208) obj%DarR(i,:)
-    WRITE(50,208) obj%DarV(i,:)
-    WRITE(50,208) obj%DarT(i,:)
-  ENDDO
-  CLOSE(50)
+  !OPEN(UNIT=50,FILE=arfile,FORM='formatted',STATUS='REPLACE', &
+  !ACTION='WRITE',RECL=8192)
+  !DO i = 1,NRF1
+  !  WRITE(50,208) obj%DarR(i,:)
+  !  WRITE(50,208) obj%DarV(i,:)
+  !  WRITE(50,208) obj%DarT(i,:)
+  !ENDDO
+  !CLOSE(50)
 ELSEIF(I_RV == -1)THEN
   OPEN(UNIT=50,FILE=predfile,FORM='formatted',STATUS='REPLACE', &
-  ACTION='WRITE',RECL=8192)
-  DO i = 1,NRF1
-    WRITE(50,208) obj%DpredR(i,:)
-  ENDDO
-  WRITE(6,*)'Done writing predicted RF.'
+  !ACTION='WRITE',RECL=8192)
+  !DO i = 1,NRF1
+  !  WRITE(50,208) obj%DpredR(i,:)
+  !ENDDO
+  !WRITE(6,*)'Done writing predicted RF.'
   CLOSE(50)
 
   OPEN(UNIT=50,FILE=obsfile,FORM='formatted',STATUS='REPLACE', &
-  ACTION='WRITE',RECL=8192)
-  DO i = 1,NRF1
-    WRITE(50,208) obj%DobsR(i,:)
-  ENDDO
-  WRITE(6,*)'Done writing observed RF.'
+  !ACTION='WRITE',RECL=8192)
+  !DO i = 1,NRF1
+  !  WRITE(50,208) obj%DobsR(i,:)
+  !ENDDO
+  !WRITE(6,*)'Done writing observed RF.'
   CLOSE(50)
 
   OPEN(UNIT=50,FILE=arfile,FORM='formatted',STATUS='REPLACE', &
-  ACTION='WRITE',RECL=8192)
-  DO i = 1,NRF1
-    WRITE(50,208) obj%DarR(i,:)
-  ENDDO
+ ! ACTION='WRITE',RECL=8192)
+ ! DO i = 1,NRF1
+ !   WRITE(50,208) obj%DarR(i,:)
+ ! ENDDO
   CLOSE(50)
 
 ENDIF
 IF(I_SWD == 1)THEN
-  OPEN(UNIT=50,FILE=predfileSWD,FORM='formatted',STATUS='REPLACE', &
+  OPEN(UNIT=50,FILE=predfileRT,FORM='formatted',STATUS='REPLACE', &
   ACTION='WRITE',RECL=8192)
   DO i = 1,NMODE
-    WRITE(50,208) obj%DpredSWD(i,:)
+    WRITE(50,208) obj%DpredRT(i,:)
   ENDDO
-  WRITE(6,*)'Done writing predicted SWD curve.'
+  WRITE(6,*)'Done writing predicted Ray Tracer TTimes.'
   CLOSE(50)
 
-  OPEN(UNIT=50,FILE=obsfileSWD,FORM='formatted',STATUS='REPLACE', &
+  OPEN(UNIT=50,FILE=obsfileRT,FORM='formatted',STATUS='REPLACE', &
   ACTION='WRITE',RECL=8192)
   DO i = 1,NMODE
-    WRITE(50,208) obj%DobsSWD(i,:)
+    WRITE(50,208) obj%DobsRT(i,:)
   ENDDO
-  WRITE(6,*)'Done writing observed SWD curve.'
+  WRITE(6,*)'Done writing observed Ray Tracer TTimes.'
   CLOSE(50)
 
-  OPEN(UNIT=50,FILE=arfileSWD,FORM='formatted',STATUS='REPLACE', &
+  OPEN(UNIT=50,FILE=arfileRT,FORM='formatted',STATUS='REPLACE', &
   ACTION='WRITE',RECL=8192)
   DO i = 1,NMODE
-    WRITE(50,208) obj%DarSWD(i,:)
+    WRITE(50,208) obj%DarRT(i,:)
   ENDDO
   CLOSE(50)
 
@@ -1926,6 +1924,18 @@ ENDIF
 RETURN
 END SUBROUTINE SAVEREPLICA
 !=======================================================================
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   MISCELLANEOUS MATH FUNCTIONS BELOW                            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+
 
 FUNCTION RANDPERM(num)
 !==============================================================================
