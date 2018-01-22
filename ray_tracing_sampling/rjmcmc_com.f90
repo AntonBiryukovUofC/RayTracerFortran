@@ -12,6 +12,9 @@ MODULE RJMCMC_COM
    INTEGER(KIND=IB) :: IMAP       !! WRITE REPLICA AND EXIT
    INTEGER(KIND=IB) :: ICOV       !! 0 = Sample implicit over sigma
                                   !! 1 = Sample over sigma
+
+   INTEGER(KIND=IB) :: I_RT       !! Use the RT data ?       
+                                  
    INTEGER(KIND=IB) :: ENOS       !! 1 = Turn on even numbered order stats
    INTEGER(KIND=IB) :: IPOIPR     !! 1 = Turn on Poisson prior on k
    INTEGER(KIND=IB) :: IAR        !! 1 = Use Autoregressive error model
@@ -28,9 +31,15 @@ MODULE RJMCMC_COM
 !! Model and data dimensions
 !!
    INTEGER(KIND=IB)            :: NLMN         ! Min number of layers
-   INTEGER(KIND=IB)            :: NLMN         ! Min number of layers
+   INTEGER(KIND=IB)            :: NLMX         ! Max number of layers
+   INTEGER(KIND=IB)            :: NMODE        ! Number of Phases in my case ( or modes for SWD)
+
    INTEGER(KIND=IB)            :: NRAYS        ! Number of rays to compute in Forward Model
+   INTEGER(KIND=IB)            :: NSRC        ! Number of rays to compute in Forward Model
+   
    INTEGER(KIND=IB)            :: NPL          ! No. parameters per layer
+   INTEGER(KIND=IB)            :: NDAT_RT        ! No. of data points
+
 
    CHARACTER(len=64) :: filebasefile      = 'filebase.txt'
    INTEGER(KIND=IB)                 :: NRF1
@@ -87,7 +96,7 @@ MODULE RJMCMC_COM
 !!
    REAL(KIND=RP)              :: armxH      = 0.2_RP           ! Max AR and ARI model range (amplitude units)
    REAL(KIND=RP)              :: armxV      = 0.2_RP           ! Max AR and ARI model range (amplitude units)
-   REAL(KIND=RP)              :: armxSWD    = 0.5_RP           ! Max AR and ARI model range (amplitude units)
+   REAL(KIND=RP)              :: armxRT    = 0.5_RP           ! Max AR and ARI model range (amplitude units)
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: minlimar, maxlimar, maxpertar
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: pertarsd, pertarsdsc
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: minlimarRT, maxlimarRT, maxpertarRT

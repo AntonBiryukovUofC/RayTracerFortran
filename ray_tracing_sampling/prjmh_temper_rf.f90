@@ -184,7 +184,7 @@ IF(IAR == 1)THEN
   DO ipar = 1,NRF1
     IF(obj%arpar(ipar) < minlimar(ipar)) obj%idxar(ipar) = 0
   ENDDO
-  obj%idxarSWD = 1
+  obj%idxarRT = 1
   DO ipar = 1,NMODE
     IF(obj%arparRT(ipar) < minlimarRT(ipar)) obj%idxarRT(ipar) = 0
   ENDDO
@@ -224,7 +224,7 @@ CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
 !  CALL PRINTPAR(obj)
 !  WRITE(6,*) 'time = ',tend2-tstart2
 !  WRITE(6,*) 'logL = ',obj%logL
-!  !CALL SAVEREPLICA(obj,predfile,obsfile,arfile,predfileSWD,obsfileSWD,arfileSWD)
+!  !CALL SAVEREPLICA(obj,predfile,obsfile,arfile,predfileRT,obsfileRT,arfileRT)
 !  !IF(ioutside == 1)WRITE(*,*)'FAILED in starting model'
 !  STOP
 !ENDIF
@@ -469,7 +469,7 @@ objnew1 = obj
 IF(1 == 1)THEN
 IF(ICOV == 1)THEN
   !!
-  !! Sample standard deviation of SWD
+  !! Sample standard deviation of RT
   !!
   IF(I_RT == 1)THEN
   CALL RANDOM_NUMBER(ran_uni_ar)
@@ -501,7 +501,7 @@ ENDIF ! ICOV if
 !! Do Metropolis-Hastings on autoregressive model
 !!
 !!
-!! Do Metropolis-Hastings on autoregressive model SWD
+!! Do Metropolis-Hastings on autoregressive model RT
 !!
 IF(IAR == 1)THEN
 IF(I_RT == 1)THEN
@@ -548,7 +548,7 @@ IF(I_RT == 1)THEN
       i_sdpert = 0
     ENDDO
   !ENDIF ! ran_uni_ar if
-ENDIF ! I_SWD if
+ENDIF ! I_RT if
 ENDIF ! AR if
 
 ENDIF !! 1 == 2 if
@@ -1433,24 +1433,24 @@ IF(arptype == 1)THEN
   CALL RANDOM_NUMBER(ran_uni)
   objnew%arparRT(iwhich) = ran_uni*(maxlimarRT(iwhich)-minlimarRT(iwhich))+minlimarRT(iwhich)
   objnew%idxarRT(iwhich) = 1
-  IF(((objnew%arparSWD(iwhich) - minlimarSWD(iwhich)) < 0._RP).OR. &
-     ((maxlimarSWD(iwhich) - objnew%arparSWD(iwhich)) < 0._RP))ioutside = 1
+  IF(((objnew%arparRT(iwhich) - minlimarRT(iwhich)) < 0._RP).OR. &
+     ((maxlimarRT(iwhich) - objnew%arparRT(iwhich)) < 0._RP))ioutside = 1
 ENDIF
 !! Death
 IF(arptype == 2)THEN
-  objnew%arparSWD(iwhich) = minlimarSWD(iwhich)-1._RP
-  objnew%idxarSWD(iwhich) = 0
+  objnew%arparRT(iwhich) = minlimarRT(iwhich)-1._RP
+  objnew%idxarRT(iwhich) = 0
 ENDIF
 !! Perturb
 IF(arptype == 3)THEN
   CALL GASDEVJ(ran_nor)
-  objnew%arparSWD(iwhich) = obj%arparSWD(iwhich) + pertarsdSWD(iwhich)*ran_nor
-  IF(((objnew%arparSWD(iwhich) - minlimarSWD(iwhich)) < 0._RP).OR. &
-     ((maxlimarSWD(iwhich) - objnew%arparSWD(iwhich)) < 0._RP))ioutside = 1
+  objnew%arparRT(iwhich) = obj%arparRT(iwhich) + pertarsdRT(iwhich)*ran_nor
+  IF(((objnew%arparRT(iwhich) - minlimarRT(iwhich)) < 0._RP).OR. &
+     ((maxlimarRT(iwhich) - objnew%arparRT(iwhich)) < 0._RP))ioutside = 1
 ENDIF
 
 RETURN
-END SUBROUTINE PROPOSAL_ARSWD
+END SUBROUTINE PROPOSAL_ARRT
 !=======================================================================
 
 !SUBROUTINE PROPOSAL_SDH(obj,objnew,iwhich)
@@ -1533,7 +1533,7 @@ IF(((objnew%sdparRT(iwhich) - minlimsdRT(iwhich)) < 0._RP).OR. &
    ((maxlimsdRT(iwhich) - objnew%sdparRT(iwhich)) < 0._RP))ioutside = 1
 
 RETURN
-END SUBROUTINE PROPOSAL_SDSWD
+END SUBROUTINE PROPOSAL_SDRT
 
 !==============================================================================
 
@@ -1631,10 +1631,10 @@ END SUBROUTINE CHECKBOUNDS2
 !DO irf = 1,NRF1
 !  obj1%sdaveH(irf)   = SUM(sdbuf(1,:))/REAL(NBUF,RP)
 !  obj1%sdaveV(irf)   = SUM(sdbuf(2,:))/REAL(NBUF,RP)
-!  obj1%sdaveSWD(irf) = SUM(sdbuf(3,:))/REAL(NBUF,RP)
+!  obj1%sdaveRT(irf) = SUM(sdbuf(3,:))/REAL(NBUF,RP)
 !  obj2%sdaveH(irf)   = SUM(sdbuf(1,:))/REAL(NBUF,RP)
 !  obj2%sdaveV(irf)   = SUM(sdbuf(2,:))/REAL(NBUF,RP)
-!  obj2%sdaveSWD(irf) = SUM(sdbuf(3,:))/REAL(NBUF,RP)
+!  obj2%sdaveRT(irf) = SUM(sdbuf(3,:))/REAL(NBUF,RP)
 !ENDDO
 !
 !RETURN
@@ -1895,7 +1895,7 @@ ELSEIF(I_RV == -1)THEN
   CLOSE(50)
 
 ENDIF
-IF(I_SWD == 1)THEN
+IF(I_RT == 1)THEN
   OPEN(UNIT=50,FILE=predfileRT,FORM='formatted',STATUS='REPLACE', &
   ACTION='WRITE',RECL=8192)
   DO i = 1,NMODE

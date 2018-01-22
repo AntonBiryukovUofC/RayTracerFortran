@@ -21,7 +21,7 @@ OBJSR= $(OBJ)/data_type.o $(OBJ)/rjmcmc_com.o $(OBJ)/alloc_obj.o $(OBJ)/read_inp
        $(OBJ)/nrtype.o $(OBJ)/nr.o $(OBJ)/nrutil.o $(OBJ)/svdcmp.o $(OBJ)/mod_sac_io.o \
        $(OBJ)/four1.o $(OBJ)/fourrow.o $(OBJ)/realft.o $(OBJ)/convlv.o $(OBJ)/quicksort.o \
        $(OBJ)/pythag.o $(OBJ)/replica.o
-FO = $(OBJ)/libswd.a
+FO = ""
 LIB =
 ##############################################################################
 
@@ -44,10 +44,10 @@ clean.done:
 #
 # PRJMH temper Receiver:
 #
-$(BIN)/prjmh_temper_rf: libswd $(OBJS) $(FO)
+$(BIN)/prjmh_temper_rf: $(OBJS) $(FO)
 	$(FC)  -o $(BIN)/prjmh_temper_rf $(OBJS) $(FO) $(LIB)
 
-$(BIN)/replica: libswd $(OBJSR) $(FO)
+$(BIN)/replica: $(OBJSR) $(FO)
 	$(FC)  -o $(BIN)/replica $(OBJSR) $(FO) $(LIB)
 
 $(OBJ)/prjmh_temper_rf.o: prjmh_temper_rf.f90 
@@ -63,10 +63,9 @@ $(OBJ)/data_type.o: data_type.f90; $(FC) -c data_type.f90 -o $(OBJ)/data_type.o 
 ##############################################################################
 #
 # Targets for separate subroutines:
-#
-libswd:
-	(cd ./swd/;make;)
-	/bin/ln -sf ./swd/*.mod .
+##!libswd:
+	#(cd ./swd/;make;)
+	#/bin/ln -sf ./swd/*.mod .
 
 ##############################################################################
 #
@@ -120,6 +119,9 @@ $(OBJ)/quicksort.o: quicksort.f90
 
 $(OBJ)/mod_sac_io.o : mod_sac_io.f90
 	$(FC) -c -o $(OBJ)/mod_sac_io.o mod_sac_io.f90
+
+$(OBJ)/subroutineR-quiet.o: $(OBJ)/raytracing/subroutineR-quiet.f90
+	$(FC) -c -o $(OBJ)/raytracing/subroutineR-quiet.o ./raytracing/subroutineR-quiet.f90
 
 ##############################################################################
 # ...this is the end my fiend

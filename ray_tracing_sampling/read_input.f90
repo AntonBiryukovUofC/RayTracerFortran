@@ -25,21 +25,21 @@ READ(20,*) ICOV
 READ(20,*) ENOS       !! Even numbered order statistic on k (avoids thin layers)
 READ(20,*) IPOIPR     !! Applies Poisson prior on k
 READ(20,*) IAR
-READ(20,*) I_VARPAR
+!READ(20,*) I_VARPAR
 READ(20,*) IBD_SINGLE
-READ(20,*) I_RV       !! Invert Radial and Vertical seismogram components
-READ(20,*) I_T        !! Invert Transverse component as well
-READ(20,*) I_SWD      !! Invert SWD data
+!READ(20,*) I_RV       !! Invert Radial and Vertical seismogram components
+!READ(20,*) I_T        !! Invert Transverse component as well
+READ(20,*) I_RT      !! Invert SWD data
 READ(20,*) I_VREF
 READ(20,*) I_VPVS
 READ(20,*) ISMPPRIOR
 READ(20,*) ISETSEED
 READ(20,*) IEXCHANGE
 READ(20,*) IDIP
-READ(20,*) NDAT_SWD   !! No. SWD data
-READ(20,*) NMODE      !! No. SWD modes
-READ(20,*) NTIME      !! No. time samples
-READ(20,*) NSRC       !! No. time samples in source-time function
+READ(20,*) NDAT_RT   !! No. RT data
+READ(20,*) NMODE      !! No. RT modes (Phases in our case)
+!READ(20,*) NTIME      !! No. time samples
+READ(20,*) NSRC       !! No. of raypaths computed 
 READ(20,*) NLMN       !! Max number of layers
 READ(20,*) NLMX       !! Max number of layers
 READ(20,*) ICHAINTHIN !! Chain thinning interval
@@ -49,14 +49,14 @@ READ(20,*) dTlog      !! Temperature increment
 READ(20,*) lambda     !! Lambda for Poisson prior on k
 READ(20,*) hmx        !! Max. partition depth
 READ(20,*) hmin       !! Min. layer thickness (must be small enough to not violate detailed balance)
-READ(20,*) armxH      !! Max. AR prediction size
-READ(20,*) armxV      !! Max. AR prediction size
-READ(20,*) armxSWD    !! Max. AR prediction size
+!READ(20,*) armxH      !! Max. AR prediction size
+!READ(20,*) armxV      !! Max. AR prediction size
+READ(20,*) armxRT    !! Max. AR prediction size for Ray Tracer
 READ(20,*) TCHCKPT    !! Checkpointing interval in s
-READ(20,*) shift2     !! time series shift for raysum
-READ(20,*) width2     !! peak width for raysum (-1 returns impulse response)
-READ(20,*) wl         !! water level for ray3d
-READ(20,*) sampling_dt!! time series sampling rate raysum
+!READ(20,*) shift2     !! time series shift for raysum
+!READ(20,*) width2     !! peak width for raysum (-1 returns impulse response)
+!READ(20,*) wl         !! water level for ray3d
+!READ(20,*) sampling_dt!! time series sampling rate raysum
 READ(20,*) dVs        !! Vs one sided prior width (relative to background model)
 READ(20,*) dVpVs      !! VpVs ratio one sided prior width
 READ(20,*) sdmn       !! data (residual) error standard deviation prior lower limit
@@ -73,10 +73,10 @@ CLOSE(20)
 !CALL readgeom(modname,baz2,slow2,sta_dx,sta_dy,ntr)
 NRF1 = ntr
   
-IF(iraysum /= 1)THEN
-  slow2 = slow2 * 1000._RP
-  baz2 = baz2 * 180._RP / PI2
-ENDIF
+!IF(iraysum /= 1)THEN
+!  slow2 = slow2 * 1000._RP
+!  baz2 = baz2 * 180._RP / PI2
+!ENDIF
 
 !kmin = NLMN
 !kmax = NLMX
@@ -91,14 +91,14 @@ DO ik = kmin,kmax
   pk(ik)  = EXP(-lambda)*lambda**REAL(ik,RP)/EXP(LOGFACTORIAL(REAL(ik,RP)))
 ENDDO
 
-infileV        = filebase(1:filebaselen) // '_V_b.txt'
-IF(I_RV == 1)THEN
-  infileH      = filebase(1:filebaselen) // '_R_b.txt'
-ELSEIF(I_RV == -1)THEN
-  infileH      = filebase(1:filebaselen) // '_RF.txt'
-ENDIF
-infileT        = filebase(1:filebaselen) // '_T_b.txt'
-infileSWD      = filebase(1:filebaselen) // '_SWD.dat'
+!infileV        = filebase(1:filebaselen) // '_V_b.txt'
+!IF(I_RV == 1)THEN
+!  infileH      = filebase(1:filebaselen) // '_R_b.txt'
+!ELSEIF(I_RV == -1)THEN
+!  infileH      = filebase(1:filebaselen) // '_RF.txt'
+!ENDIF
+!infileT        = filebase(1:filebaselen) // '_T_b.txt'
+infileRT      = filebase(1:filebaselen) // '_RT.dat'
 infileref      = filebase(1:filebaselen) // '_vel_ref.txt'
 logfile        = filebase(1:filebaselen) // '_RJMH.log'
 seedfile       = filebase(1:filebaselen) // '_seeds.log'
@@ -106,9 +106,9 @@ mapfile        = filebase(1:filebaselen) // '_map_voro.dat'
 arfile         = filebase(1:filebaselen) // '_ar.dat'
 predfile       = filebase(1:filebaselen) // '_mappred.dat'
 obsfile        = filebase(1:filebaselen) // '_obs.dat'
-arfileSWD      = filebase(1:filebaselen) // '_maparSWD.dat'
-predfileSWD    = filebase(1:filebaselen) // '_mappredSWD.dat'
-obsfileSWD     = filebase(1:filebaselen) // '_obsSWD.dat'
+arfileRT      = filebase(1:filebaselen) // '_maparRT.dat'
+predfileRT    = filebase(1:filebaselen) // '_mappredRT.dat'
+obsfileRT     = filebase(1:filebaselen) // '_obsRT.dat'
 !covfile        = filebase(1:filebaselen) // '_cov.txt'
 sdfile         = filebase(1:filebaselen) // '_sigma.txt'
 samplefile     = filebase(1:filebaselen) // '_voro_sample.txt'
@@ -118,9 +118,9 @@ IF(IDIP == 0) NPL=3      ! No. parameters per layer
 IF(IDIP == 1) NPL=4      ! No. parameters per layer with dip
 IF(IDIP == 2) NPL=5      ! No. parameters per layer with strike and dip
 
-NTIME2 = NTIME+NSRC-1  ! Number time samples for zero padded observations
-NRRG   = NTIME2 + NTIME - 1 ! No. points for convolution RRG
-NRGRG  = NTIME  + NTIME - 1 ! No. points for convolution RGRG
+!NTIME2 = NTIME+NSRC-1  ! Number time samples for zero padded observations
+!NRRG   = NTIME2 + NTIME - 1 ! No. points for convolution RRG
+!NRGRG  = NTIME  + NTIME - 1 ! No. points for convolution RGRG
 NFPMX  = NLMX * NPL
 NFPMX2 = NLMX * NPL * NPL
 
@@ -161,12 +161,12 @@ ENDIF
 !!
 !! Set width of Gaussian for raysum. -1. means get impulse response.
 !!
-IF(I_RV >= 0)THEN
-  width2 = -1._SP
+!IF(I_RV >= 0)THEN
+!  width2 = -1._SP
 !! The width for the RF case is read from input parameter file
 !ELSE
 !  width = 2._SP
-ENDIF
+!ENDIF
 
 ALLOCATE( sdbuf(3,NRF1,NBUF) ) 
 ALLOCATE(idxpar(NPL),sdevm((NLMX*NPL)+NPL-1,NLMX))
@@ -181,20 +181,20 @@ ALLOCATE(pertarsd(3*NRF1),pertarsdsc(3*NRF1))
 minlimar  = 0._RP;maxlimar  = 0._RP;maxpertar = 0._RP
 pertarsd  = 0._RP;pertarsdsc= 18._RP
 
-ALLOCATE(minlimarSWD(NMODE),maxlimarSWD(NMODE),maxpertarSWD(NMODE))
-ALLOCATE(pertarsdSWD(NMODE),pertarsdscSWD(NMODE))
-minlimarSWD  = 0._RP;maxlimarSWD  = 0._RP;maxpertarSWD = 0._RP
-pertarsdSWD  = 0._RP;pertarsdscSWD= 18._RP
+ALLOCATE(minlimarRT(NMODE),maxlimarRT(NMODE),maxpertarRT(NMODE))
+ALLOCATE(pertarsdRT(NMODE),pertarsdscRT(NMODE))
+minlimarRT  = 0._RP;maxlimarRT  = 0._RP;maxpertarRT = 0._RP
+pertarsdRT  = 0._RP;pertarsdscRT= 18._RP
 
 ALLOCATE(minlimsd(NRF1),maxlimsd(NRF1),maxpertsd(NRF1))
 ALLOCATE(pertsdsd(NRF1),pertsdsdsc(NRF1))
 minlimsd  = 0._RP;maxlimsd  = 0._RP;maxpertsd = 0._RP
 pertsdsd  = 0._RP;pertsdsdsc= 18._RP
 
-ALLOCATE(minlimsdSWD(NMODE),maxlimsdSWD(NMODE),maxpertsdSWD(NMODE))
-ALLOCATE(pertsdsdSWD(NMODE),pertsdsdscSWD(NMODE))
-minlimsdSWD  = 0._RP;maxlimsdSWD  = 0._RP;maxpertsdSWD = 0._RP
-pertsdsdSWD  = 0._RP;pertsdsdscSWD= 18._RP
+ALLOCATE(minlimsdRT(NMODE),maxlimsdRT(NMODE),maxpertsdRT(NMODE))
+ALLOCATE(pertsdsdRT(NMODE),pertsdsdscRT(NMODE))
+minlimsdRT  = 0._RP;maxlimsdRT  = 0._RP;maxpertsdRT = 0._RP
+pertsdsdRT  = 0._RP;pertsdsdscRT= 18._RP
 
 IF(I_VPVS == 1)THEN
   IF(iraysum == 1)THEN
@@ -249,11 +249,11 @@ IF(IAR == 1)THEN
   pertarsdsc =  10._RP
   maxpertar  = maxlimar-minlimar
   pertarsd   = maxpertar/pertarsdsc
-  minlimarSWD   = -0.5000_RP
-  maxlimarSWD   =  0.90_RP
-  pertarsdscSWD =  10._RP
-  maxpertarSWD  = maxlimarSWD-minlimarSWD
-  pertarsdSWD   = maxpertarSWD/pertarsdscSWD
+  minlimarRT   = -0.5000_RP
+  maxlimarRT   =  0.90_RP
+  pertarsdscRT =  10._RP
+  maxpertarRT  = maxlimarRT-minlimarRT
+  pertarsdRT   = maxpertarRT/pertarsdscRT
 ENDIF
 
 IF(ICOV == 1)THEN
@@ -263,11 +263,11 @@ IF(ICOV == 1)THEN
   pertsdsdsc = 10._RP
   maxpertsd  = maxlimsd-minlimsd
   pertsdsd   = maxpertsd/pertsdsdsc
-  minlimsdSWD   = sdmn(2)
-  maxlimsdSWD   = sdmx(2)
-  pertsdsdscSWD = 10._RP
-  maxpertsdSWD  = maxlimsdSWD-minlimsdSWD
-  pertsdsdSWD   = maxpertsdSWD/pertsdsdscSWD
+  minlimsdRT   = sdmn(2)
+  maxlimsdRT   = sdmx(2)
+  pertsdsdscRT = 10._RP
+  maxpertsdRT  = maxlimsdRT-minlimsdRT
+  pertsdsdRT   = maxpertsdRT/pertsdsdscRT
 ENDIF
 
 !!
@@ -276,17 +276,17 @@ ENDIF
 IF(rank == src)THEN
   WRITE(6,*) 'IMAP      = ', IMAP
   WRITE(6,*) 'ICOV      = ', ICOV
-  WRITE(6,*) 'I_RV      = ', I_RV
-  WRITE(6,*) 'I_T       = ', I_T
-  WRITE(6,*) 'I_SWD     = ', I_SWD
+  !WRITE(6,*) 'I_RV      = ', I_RV
+  !WRITE(6,*) 'I_T       = ', I_T
+  WRITE(6,*) 'I_RT     = ', I_RT
   WRITE(6,*) 'IAR       = ', IAR
   WRITE(6,*) 'I_VPVS    = ', I_VPVS
   WRITE(6,*) 'ISMPPRIOR = ', ISMPPRIOR
   WRITE(6,*) 'ISETSEED  = ', ISETSEED
   WRITE(6,*) 'IEXCHANGE = ', IEXCHANGE
   WRITE(6,*) 'IDIP      = ', IDIP
-  WRITE(6,*) 'NTIME     = ', NTIME      !! No. time samples
-  WRITE(6,*) 'NSRC      = ', NSRC       !! No. time samples in source-time function
+  !WRITE(6,*) 'NTIME     = ', NTIME      !! No. time samples
+  WRITE(6,*) 'NSRC      = ', NSRC       !! No. of rays (sources)
   WRITE(6,*) 'NLMN      = ', NLMN       !! Max number of layers
   WRITE(6,*) 'NLMX      = ', NLMX       !! Max number of layers
   WRITE(6,*) 'ICHAINTHIN= ', ICHAINTHIN !! Chain thinning interval
@@ -298,10 +298,10 @@ IF(rank == src)THEN
   WRITE(6,*) 'armxH     = ', armxH      !! Max. AR prediction size
   WRITE(6,*) 'armxV     = ', armxV      !! Max. AR prediction size
   WRITE(6,*) 'TCHCKPT   = ', TCHCKPT    !! Checkpointing interval in s
-  WRITE(6,*) 'shift2    = ', shift2     !! time series shift for raysum
-  WRITE(6,*) 'width2    = ', width2     !! time series shift for raysum
-  WRITE(6,*) 'wter level= ', wl         !! water level for ray 3D
-  WRITE(6,*) 'sampling_dt= ', sampling_dt!! time series sampling rate raysum
+  !WRITE(6,*) 'shift2    = ', shift2     !! time series shift for raysum
+  !WRITE(6,*) 'width2    = ', width2     !! time series shift for raysum
+  !WRITE(6,*) 'wter level= ', wl         !! water level for ray 3D
+  !WRITE(6,*) 'sampling_dt= ', sampling_dt!! time series sampling rate raysum
   WRITE(6,*) 'NRF1       = ', NRF1      !! No. azimuth bins
   WRITE(6,*) 'Sample file: ',samplefile
   WRITE(6,*) ''
@@ -334,50 +334,52 @@ IMPLICIT NONE
 INTEGER(KIND=RP):: iaz,idat,io
 TYPE(objstruc)  :: obj
 
-IF(I_RV == 1)THEN
+!IF(I_RV == 1)THEN
   !! Radial and Vertical components:
-  OPEN(UNIT=20,FILE=infileH,FORM='formatted',STATUS='OLD',ACTION='READ')
-  OPEN(UNIT=21,FILE=infileV,FORM='formatted',STATUS='OLD',ACTION='READ')
+  !OPEN(UNIT=20,FILE=infileH,FORM='formatted',STATUS='OLD',ACTION='READ')
+  !OPEN(UNIT=21,FILE=infileV,FORM='formatted',STATUS='OLD',ACTION='READ')
   !!
   !! Observed are NTIME long but need to zero pad to NTIME2 for convolution
   !!
-  obj%DobsR(1,1:NTIME2) = 0._RP
-  obj%DobsV(1,1:NTIME2) = 0._RP
-  DO iaz = 1,NRF1
-    READ(20,*) obj%DobsR(iaz,1:NTIME)
-    READ(21,*) obj%DobsV(iaz,1:NTIME)
-  ENDDO
-  CLOSE(20)
-  CLOSE(21)
-  IF(I_T == 1)THEN
+  !obj%DobsR(1,1:NTIME2) = 0._RP
+  !obj%DobsV(1,1:NTIME2) = 0._RP
+  !DO iaz = 1,NRF1
+  !  READ(20,*) obj%DobsR(iaz,1:NTIME)
+  !  READ(21,*) obj%DobsV(iaz,1:NTIME)
+  !ENDDO
+  !CLOSE(20)
+  !CLOSE(21)
+ ! IF(I_T == 1)THEN
     !! Transverse components:
-    OPEN(UNIT=20,FILE=infileT,FORM='formatted',STATUS='OLD',ACTION='READ')
-    obj%DobsT(1,1:NTIME2) = 0._RP
-    DO iaz = 1,NRF1
-      READ(20,*) obj%DobsT(iaz,1:NTIME)
-    ENDDO
-    CLOSE(20)
-  ENDIF
-ELSEIF(I_RV == -1)THEN
+    !OPEN(UNIT=20,FILE=infileT,FORM='formatted',STATUS='OLD',ACTION='READ')
+    !obj%DobsT(1,1:NTIME2) = 0._RP
+    !DO iaz = 1,NRF1
+    !  READ(20,*) obj%DobsT(iaz,1:NTIME)
+    !ENDDO
+    !CLOSE(20)
+ ! ENDIF
+!ELSEIF(I_RV == -1)THEN
   !! Radial and Vertical components:
-  OPEN(UNIT=20,FILE=infileH,FORM='formatted',STATUS='OLD',ACTION='READ')
+ ! OPEN(UNIT=20,FILE=infileH,FORM='formatted',STATUS='OLD',ACTION='READ')
   !!
   !! Observed RF are NTIME long
   !!
-  obj%DobsR(1,:) = 0._RP
-  DO iaz = 1,NRF1
-    READ(20,*) obj%DobsR(iaz,1:NTIME)
-  ENDDO
-  CLOSE(20)
-ENDIF
-IF(I_SWD == 1)THEN
+  !obj%DobsR(1,:) = 0._RP
+  !DO iaz = 1,NRF1
+  !  READ(20,*) obj%DobsR(iaz,1:NTIME)
+  !ENDDO
+  !CLOSE(20)
+!ENDIF
+IF(I_RT == 1)THEN
   !!
-  !! Surface wave dispersion data:
+  !! Ray traced travel time data:
   !!
-  OPEN(20,FILE=infileSWD,FORM='formatted',STATUS='OLD',ACTION='READ')
+  OPEN(20,FILE=infileRT,FORM='formatted',STATUS='OLD',ACTION='READ')
   !ndat = 0
-  DO idat=1,NDAT_SWD
-     READ(20,*,IOSTAT=io) obj%periods(1,idat),obj%DobsSWD(1,idat)
+  DO idat=1,NDAT_RT
+     !READ(20,*,IOSTAT=io) obj%periods(1,idat),obj%DobsRT(1,idat)
+     READ(20,*,IOSTAT=io) obj%DobsRT(1,idat)
+     
      IF (io > 0) THEN
        STOP "Check input.  Something was wrong"
      ELSEIF (io < 0) THEN
@@ -418,15 +420,15 @@ WRITE(6,*) 'Layers:'
 WRITE(6,203) obj%hiface(1:obj%nunique)
 IF(ICOV == 1)THEN
    WRITE(6,*) 'SD parameters:'
-   WRITE(6,206) 'sigma H   = ',obj%sdparR
-   WRITE(6,206) 'sigma V   = ',obj%sdparV
-   WRITE(6,206) 'sigma T   = ',obj%sdparT
-   WRITE(6,206) 'sigma SWD = ',obj%sdparSWD
+   !WRITE(6,206) 'sigma H   = ',obj%sdparR
+   !WRITE(6,206) 'sigma V   = ',obj%sdparV
+   !WRITE(6,206) 'sigma T   = ',obj%sdparT
+   WRITE(6,206) 'sigma SWD = ',obj%sdparRT
 ENDIF
 IF(IAR == 1)THEN
    WRITE(6,*) 'AR parameters:'
    WRITE(6,206) 'R and V: ',obj%arpar
-   WRITE(6,206) 'SWD:',obj%arparSWD
+   WRITE(6,206) 'RT:',obj%arparRT
 ENDIF
 
 201 FORMAT(6F12.4)
