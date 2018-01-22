@@ -16,12 +16,12 @@ OBJ = ./obj
 OBJS = $(OBJ)/data_type.o $(OBJ)/rjmcmc_com.o $(OBJ)/alloc_obj.o $(OBJ)/read_input.o $(OBJ)/loglhood.o \
        $(OBJ)/nrtype.o $(OBJ)/nr.o $(OBJ)/nrutil.o $(OBJ)/svdcmp.o $(OBJ)/mod_sac_io.o \
        $(OBJ)/four1.o $(OBJ)/fourrow.o $(OBJ)/realft.o $(OBJ)/convlv.o $(OBJ)/quicksort.o \
-       $(OBJ)/pythag.o $(OBJ)/prjmh_temper_rf.o
+       $(OBJ)/pythag.o $(OBJ)/prjmh_temper_rf.o $(OBJ)/subroutineR-quiet.o
 OBJSR= $(OBJ)/data_type.o $(OBJ)/rjmcmc_com.o $(OBJ)/alloc_obj.o $(OBJ)/read_input.o $(OBJ)/loglhood.o \
        $(OBJ)/nrtype.o $(OBJ)/nr.o $(OBJ)/nrutil.o $(OBJ)/svdcmp.o $(OBJ)/mod_sac_io.o \
        $(OBJ)/four1.o $(OBJ)/fourrow.o $(OBJ)/realft.o $(OBJ)/convlv.o $(OBJ)/quicksort.o \
-       $(OBJ)/pythag.o $(OBJ)/replica.o
-FO = ""
+       $(OBJ)/pythag.o $(OBJ)/replica.o $(OBJ)/subroutineR-quiet.o
+FO = 
 LIB =
 ##############################################################################
 
@@ -71,6 +71,10 @@ $(OBJ)/data_type.o: data_type.f90; $(FC) -c data_type.f90 -o $(OBJ)/data_type.o 
 #
 # Targets to compile NR subroutines that are in separate files:
 #
+
+$(OBJ)/subroutineR-quiet.o: subroutineR-quiet.f90
+	$(FC) -c -o $(OBJ)/subroutineR-quiet.o subroutineR-quiet.f90
+
 $(OBJ)/read_input.o: read_input.f90
 	$(FC) -c -o $(OBJ)/read_input.o read_input.f90
 
@@ -120,8 +124,6 @@ $(OBJ)/quicksort.o: quicksort.f90
 $(OBJ)/mod_sac_io.o : mod_sac_io.f90
 	$(FC) -c -o $(OBJ)/mod_sac_io.o mod_sac_io.f90
 
-$(OBJ)/subroutineR-quiet.o: $(OBJ)/raytracing/subroutineR-quiet.f90
-	$(FC) -c -o $(OBJ)/raytracing/subroutineR-quiet.o ./raytracing/subroutineR-quiet.f90
 
 ##############################################################################
 # ...this is the end my fiend

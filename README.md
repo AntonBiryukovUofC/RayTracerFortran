@@ -31,3 +31,12 @@ I will populate later this section, after I "clean" this repository. For now, lo
 2. READDATA() needs adapting for Ray Tracer travel times 
 3. Figure out what INTERPLAYER routine does 
 4. Fix PROPOSAL_SDRT() for ray tracing
+5. Hard-code or always set IDIP == 0
+6. Ask Jan about this:
+`prjmh_temper_rf.f90:1812:17:
+
+ 213 FORMAT(a23,I,F8.4)
+                 1
+Error: Nonnegative width required in format string at (1)`
+
+7. DGELSS -- gives undefined reference error in `prjmh_temper_rf.f90`

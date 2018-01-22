@@ -1809,7 +1809,7 @@ CALL FLUSH(6)
 202 FORMAT(A3,I8,1F14.4,I4,I10,I10,I8,1f12.4)
 203 FORMAT(A69)
 207 FORMAT(500ES18.8)
-213 FORMAT(a23,I,F8.4)
+213 FORMAT(a23,I4,F8.4) ! Not sure here why this happens to be an error !
 214 FORMAT(a23,I6,a9,I4)
 215 FORMAT(a23,F8.4,I4,I4)
 216 FORMAT(a23,F8.2,a)
@@ -1830,7 +1830,7 @@ WRITE(6,*) 'Global best model:'
 CALL PRINTPAR(obj)
 WRITE(6,*) 'Global best logL = ',obj%logL
 
-IF(I_RV == 1)THEN
+!IF(I_RV == 1)THEN
   !OPEN(UNIT=50,FILE=predfile,FORM='formatted',STATUS='REPLACE', &
   !ACTION='WRITE',RECL=8192)
 !  DO i = 1,NRF1
@@ -1870,31 +1870,31 @@ IF(I_RV == 1)THEN
   !  WRITE(50,208) obj%DarT(i,:)
   !ENDDO
   !CLOSE(50)
-ELSEIF(I_RV == -1)THEN
-  OPEN(UNIT=50,FILE=predfile,FORM='formatted',STATUS='REPLACE', &
+!ELSEIF(I_RV == -1)THEN
+  !OPEN(UNIT=50,FILE=predfile,FORM='formatted',STATUS='REPLACE', &
   !ACTION='WRITE',RECL=8192)
   !DO i = 1,NRF1
   !  WRITE(50,208) obj%DpredR(i,:)
   !ENDDO
   !WRITE(6,*)'Done writing predicted RF.'
-  CLOSE(50)
+  !CLOSE(50)
 
-  OPEN(UNIT=50,FILE=obsfile,FORM='formatted',STATUS='REPLACE', &
+  !OPEN(UNIT=50,FILE=obsfile,FORM='formatted',STATUS='REPLACE', &
   !ACTION='WRITE',RECL=8192)
   !DO i = 1,NRF1
   !  WRITE(50,208) obj%DobsR(i,:)
   !ENDDO
   !WRITE(6,*)'Done writing observed RF.'
-  CLOSE(50)
+  !CLOSE(50)
 
-  OPEN(UNIT=50,FILE=arfile,FORM='formatted',STATUS='REPLACE', &
+  !OPEN(UNIT=50,FILE=arfile,FORM='formatted',STATUS='REPLACE', &
  ! ACTION='WRITE',RECL=8192)
  ! DO i = 1,NRF1
  !   WRITE(50,208) obj%DarR(i,:)
  ! ENDDO
-  CLOSE(50)
+  !CLOSE(50)
 
-ENDIF
+!ENDIF
 IF(I_RT == 1)THEN
   OPEN(UNIT=50,FILE=predfileRT,FORM='formatted',STATUS='REPLACE', &
   ACTION='WRITE',RECL=8192)
@@ -2231,11 +2231,11 @@ ENDDO
 !! first, figure out optimal work length...
 XMAT2 = REAL(XMAT,DRP)
 LWORK = -1
-CALL DGELSS(Nz, Ny, NRHS, XMAT2, LDA, b, LDB, SV, RCOND, MRANK, WORK, LWORK, INFO)
-LWORK = MIN( LWMAX, INT( WORK( 1 ) ) )
+!CALL DGELSS(Nz, Ny, NRHS, XMAT2, LDA, b, LDB, SV, RCOND, MRANK, WORK, LWORK, INFO)
+!LWORK = MIN( LWMAX, INT( WORK( 1 ) ) )
 !! Carry out DGELSS with optimal length
-CALL DGELSS(Nz, Ny, NRHS, XMAT2, LDA, b, LDB, SV, RCOND, MRANK, WORK, LWORK, INFO)
-IF(INFO /= 0)WRITE(*,*)'WARNING DGELSS unstable!'
+!CALL DGELSS(Nz, Ny, NRHS, XMAT2, LDA, b, LDB, SV, RCOND, MRANK, WORK, LWORK, INFO)
+!IF(INFO /= 0)WRITE(*,*)'WARNING DGELSS unstable!'
 
 y = REAL(b(1:Ny),RP)
 RETURN

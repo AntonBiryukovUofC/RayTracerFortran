@@ -14,7 +14,8 @@ MODULE RJMCMC_COM
                                   !! 1 = Sample over sigma
 
    INTEGER(KIND=IB) :: I_RT       !! Use the RT data ?       
-                                  
+   INTEGER(KIND=IB) :: I_VARPAR       !! Type of Parametrization       
+
    INTEGER(KIND=IB) :: ENOS       !! 1 = Turn on even numbered order stats
    INTEGER(KIND=IB) :: IPOIPR     !! 1 = Turn on Poisson prior on k
    INTEGER(KIND=IB) :: IAR        !! 1 = Use Autoregressive error model

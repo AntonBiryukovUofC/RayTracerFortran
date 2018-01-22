@@ -11,7 +11,7 @@ INTEGER(KIND=IB):: ipred
 TYPE (objstruc) :: obj
 REAL(KIND=RP)   :: logL_RT
 
-!! log likelihood SWD data
+!! log likelihood RT data
 IF(I_RT == 1)THEN
   CALL LOGLHOOD_RT(obj,ipred,logL_RT)
 ELSE
@@ -34,7 +34,7 @@ END SUBROUTINE LOGLHOOD
 SUBROUTINE LOGLHOOD_RT(obj,ipred,logL)
 !!=======================================================================
 !!
-!!  Compute predicted SWD data and compute logL_SWD
+!!  Compute predicted RT data and compute logL_RT
 !!
 USE RJMCMC_COM
 USE MPI
@@ -106,15 +106,15 @@ IF(IMAP == 1)THEN
   !206   FORMAT(I3,10F12.4)
 ENDIF
 
-periods = REAL(obj%periods(1,1:NDAT_RT),SP)
+!periods = REAL(obj%periods(1,1:NDAT_RT),SP)
 !!
 !!  Need to append PREM perturbed by half-space perturbation here to 
-!!  ensure that long period SWD can be properly modelled. 
+!!  ensure that long period RT can be properly modelled. 
 !!
-CALL dispersion(obj%nunique+1+NPREM,curmod2(1:obj%nunique+1+NPREM,2)/1000., & 
-     curmod2(1:obj%nunique+1+NPREM,3)/1000.,curmod2(1:obj%nunique+1+NPREM,4)/1000.,&
-     curmod2(1:obj%nunique+1+NPREM,1)/1000.,DpredRT,&
-     periods,NDAT_RT,ierr_rt)
+!CALL dispersion(obj%nunique+1+NPREM,curmod2(1:obj%nunique+1+NPREM,2)/1000., & 
+!     curmod2(1:obj%nunique+1+NPREM,3)/1000.,curmod2(1:obj%nunique+1+NPREM,4)/1000.,&
+!     curmod2(1:obj%nunique+1+NPREM,1)/1000.,DpredRT,&
+!     periods,NDAT_RT,ierr_rt)
 
 IF(ierr_rt /= 0)THEN
   logL = -HUGE(1._RP)
@@ -352,7 +352,7 @@ IF(I_VREF == 1)THEN
     !WRITE(*,*)''
   ENDDO
 ENDIF
-201 FORMAT(I,5F12.6)
+!201 FORMAT(I,5F12.6)
 !!
 !!  Find interfaces for each parameter
 !!
@@ -540,13 +540,13 @@ INTEGER          :: i,j,k,ifr,idata,idatb
 REAL(KIND=RP),DIMENSION(idatb-idata+1)::dres1,dar1
 IF(obj%idxar(ifr) == 1)THEN
    k = 1
-   obj%DarR(ifr,idata)=0._RP          ! Matlab sets first point to zero...
+   !obj%DarR(ifr,idata)=0._RP          ! Matlab sets first point to zero...
 
    !!
    !! Real part:
    !!
    dres1 = 0._RP
-   dres1 = obj%DresR(ifr,idata:idatb)
+   !dres1 = obj%DresR(ifr,idata:idatb)
 
    dar1(1)=0._RP          ! Matlab sets first point to zero...
    DO i=2,idatb-idata+1
@@ -561,9 +561,9 @@ IF(obj%idxar(ifr) == 1)THEN
          ENDDO
       ENDIF
    ENDDO
-   obj%DarR(ifr,idata:idatb) = dar1
-   obj%DarR(ifr,idata) = 0._RP
-   obj%DarR(ifr,idatb) = 0._RP
+   !obj%DarR(ifr,idata:idatb) = dar1
+   !obj%DarR(ifr,idata) = 0._RP
+   !obj%DarR(ifr,idatb) = 0._RP
 ENDIF
 END SUBROUTINE ARPRED_RF
 !!=======================================================================
