@@ -38,6 +38,7 @@ SUBROUTINE LOGLHOOD_RT(obj,ipred,logL)
 !!
 USE RJMCMC_COM
 USE MPI
+USE RAYMOD
 USE ieee_arithmetic
 IMPLICIT NONE
 
@@ -45,10 +46,13 @@ INTEGER(KIND=IB)                      :: ipred,ierr_rt,imod,ibadlogL,ilay
 TYPE (objstruc)                       :: obj
 REAL(KIND=SP),DIMENSION(maxlay,10)    :: curmod
 REAL(KIND=SP),DIMENSION(maxlay+NPREM,10):: curmod2
-REAL(KIND=SP),DIMENSION(NDAT_RT)     :: periods,DpredRT
+REAL(KIND=RP),DIMENSION(NDAT_RT)     :: DpredRT
 REAL(KIND=RP),DIMENSION(NMODE)        :: EtmpRT
 REAL(KIND=RP)                         :: logL,factvs,factvpvs
 REAL(KIND=RP)                         :: tstart, tend, tcmp   ! Overall time 
+REAL(KIND=RP),DIMENSION(obj%k)     :: vels
+REAL(KIND=RP),DIMENSION(obj%k-1)     :: depths
+
 LOGICAL :: ISNAN
 
 curmod = 0.
@@ -93,11 +97,12 @@ curmod2(obj%nunique+1,1)   = (vel_prem(1,1)*1000.)-obj%voro(obj%k,1)*1000.
 !PRINT*,'obj par',obj%par(1:obj%NFP+2)
 !PRINT*,'fact',factvs,factvpvs,obj%par((obj%nunique-1)*NPL+1)
 
-curmod2(obj%nunique+2:obj%nunique+NPREM,1)   = (vel_prem(1,2:NPREM)-vel_prem(1,1:NPREM-1)) * 1000. !! thickness in km
-curmod2(obj%nunique+1+NPREM,1)               = 0.                                                  !! HS thickness is 0 
-curmod2(obj%nunique+2:obj%nunique+1+NPREM,2) = vel_prem(4,1:NPREM) * 1000.            !! Density
-curmod2(obj%nunique+2:obj%nunique+1+NPREM,4) = (vel_prem(2,1:NPREM) + factvs) * 1000. !! Vs
-curmod2(obj%nunique+2:obj%nunique+1+NPREM,3) = (vel_prem(2,1:NPREM)+factvs)*(vel_prem(3,1:NPREM)+factvpvs)*1000. !! Vp
+!curmod2(obj%nunique+2:obj%nunique+NPREM,1)   = (vel_prem(1,2:NPREM)-vel_prem(1,1:NPREM-1)) * 1000. !! thickness in km
+!curmod2(obj%nunique+1+NPREM,1)               = 0.                                                  !! HS thickness is 0 
+!curmod2(obj%nunique+2:obj%nunique+1+NPREM,2) = vel_prem(4,1:NPREM) * 1000.            !! Density
+!curmod2(obj%nunique+2:obj%nunique+1+NPREM,4) = (vel_prem(2,1:NPREM) + factvs) * 1000. !! Vs
+!curmod2(obj%nunique+2:obj%nunique+1+NPREM,3) = (vel_prem(2,1:NPREM)+factvs)*(vel_prem(3,1:NPREM)+factvpvs)*1000. !! Vp
+
 IF(IMAP == 1)THEN
   WRITE(*,*) 'curmod2 (including PREM)'
   DO ilay=1,obj%nunique+1+NPREM+1
@@ -115,6 +120,13 @@ ENDIF
 !     curmod2(1:obj%nunique+1+NPREM,3)/1000.,curmod2(1:obj%nunique+1+NPREM,4)/1000.,&
 !     curmod2(1:obj%nunique+1+NPREM,1)/1000.,DpredRT,&
 !     periods,NDAT_RT,ierr_rt)
+
+vels = obj%voro(:,3) ! Retrieve P-wave velocities here (alphas)
+depths = obj%voro(2:obj%k,1) ! Retrieve Layer thicknesses
+
+
+CALL TraceRays(vels,depths,obj%k-1,src_offset,src_depth,NSRC,DpredRT,1)
+
 
 IF(ierr_rt /= 0)THEN
   logL = -HUGE(1._RP)

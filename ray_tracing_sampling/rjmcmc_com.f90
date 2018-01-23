@@ -35,12 +35,15 @@ MODULE RJMCMC_COM
    INTEGER(KIND=IB)            :: NLMX         ! Max number of layers
    INTEGER(KIND=IB)            :: NMODE        ! Number of Phases in my case ( or modes for SWD)
 
-   INTEGER(KIND=IB)            :: NRAYS        ! Number of rays to compute in Forward Model
-   INTEGER(KIND=IB)            :: NSRC        ! Number of rays to compute in Forward Model
    
    INTEGER(KIND=IB)            :: NPL          ! No. parameters per layer
    INTEGER(KIND=IB)            :: NDAT_RT        ! No. of data points
 
+   ! Forward model specifics for Ray Tracer
+   INTEGER(KIND=IB)            :: NRAYS        ! Number of rays to compute in Forward Model
+   INTEGER(KIND=IB)            :: NSRC        ! Number of rays to compute in Forward Model
+   REAL(KIND=RP), ALLOCATABLE, DIMENSION(:):: src_offset      ! The offset (source-receiver distance projected on the surface)
+   REAL(KIND=RP), ALLOCATABLE, DIMENSION(:):: src_depth      ! The offset (source-receiver distance projected on the surface)
 
    CHARACTER(len=64) :: filebasefile      = 'filebase.txt'
    INTEGER(KIND=IB)                 :: NRF1

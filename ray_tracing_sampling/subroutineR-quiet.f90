@@ -2,7 +2,7 @@ module raymod
 
    implicit none
    private
-   public :: whichLayer,GetPTime, InsertLayer,costFunc,costFunc_Prime,solve, dofullforwardproblem,solvebst
+   public :: whichLayer,GetPTime, InsertLayer,costFunc,costFunc_Prime,solve, dofullforwardproblem,solvebst,TraceRays
    contains
 
 
@@ -395,10 +395,6 @@ subroutine solvebst(x1,x2,x,iters, debug,H,V,R)
 end subroutine solvebst
 
 
-
-
-
-
 subroutine dofullforwardproblem(vels,depths,NLayers,src_offset,src_depth,NSrc,timeP,keep_delta) bind(C, name="dff_")
 
 
@@ -455,6 +451,64 @@ subroutine dofullforwardproblem(vels,depths,NLayers,src_offset,src_depth,NSrc,ti
            ! print *, '--------------------------------------'
     end do
 end subroutine
+
+
+
+subroutine TraceRays(vels,depths,NLayers,src_offset,src_depth,NSrc,timeP,keep_delta)
+
+
+    integer,intent(in) :: NLayers,NSrc
+    integer ::  k,nl
+    integer, intent(in) :: keep_delta
+    double precision, DIMENSION(NSrc):: src_offset,src_depth
+    double precision :: dph
+    double precision :: p
+    double precision, DIMENSION(NSrc),intent(out) :: timeP
+    ! Here is the model description:
+    double precision, DIMENSION(NLayers+1),intent(in):: vels
+    double precision, DIMENSION(NLayers),intent(in):: depths
+    double precision, DIMENSION(NLayers+2):: vels_new
+    double precision, DIMENSION(NLayers+1):: depths_new
+    integer NNew,AllocateStatus
+
+    depths_new=0
+    vels_new=0
+    k=0
+    timeP=-1
+!    print *,' depths '
+    open(unit=1,file='rays.dat',form="FORMATTED",status='REPLACE',action='READWRITE')
+    close(1)
+    do k=1,size(src_depth)
+            dph = src_depth(k)
+            nl = whichLayer(depths,dph)
+
+            if (nl == 1) then
+                   ! print *,'Source in ',nl, ' layer'
+                    p=0.011
+                    timeP(k) = GetPTime(dph,src_offset(k),nl,NLayers,vels,depths,p,keep_delta)
+
+                else
+                    ! Here we need to pick Hi,Vi by introducing a new layer
+                    NNew = NLayers+1
+                    p=1e-5
+                   ! print *, 'Vels is ', vels
+                  !  print *, 'Depths is ', depths
+                  !  print *,NLayers,NNew
+                    call InsertLayer(vels,depths,NLayers,vels_new,depths_new,NNew,nl,dph)
+                   ! print *, 'Source in ', nl, ' layer'
+                   ! print *, 'Vels is ', vels_new
+                    !print *, 'Depths is ', depths_new
+                   ! print *, 'Calculating time'
+                    timeP(k) = GetPTime(dph,src_offset(k),nl,NLayers,vels_new(1:nl),depths_new(1:nl),p,keep_delta)
+            endif
+            !timeP=GetPTime(dph,src_offset(k),nl,NLayers,vels,depths)
+           ! print *, 'Time is ', timeP(k)
+           ! print *, '--------------------------------------'
+           ! print *, '--------------------------------------'
+           ! print *, '--------------------------------------'
+    end do
+end subroutine
+
 
 end module raymod
 
