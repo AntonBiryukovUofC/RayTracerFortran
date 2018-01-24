@@ -127,6 +127,8 @@ MODULE RJMCMC_COM
    !CHARACTER(LEN=100) :: infileT
    CHARACTER(LEN=100) :: infileRT
    CHARACTER(LEN=100) :: infileref
+   CHARACTER(LEN=100) :: source_data_file
+
    !CHARACTER(LEN=100) :: repfileR
    !CHARACTER(LEN=100) :: repfileT
    !CHARACTER(LEN=100) :: repfileV

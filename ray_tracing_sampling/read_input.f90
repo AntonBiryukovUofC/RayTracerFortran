@@ -113,6 +113,9 @@ obsfileRT     = filebase(1:filebaselen) // '_obsRT.dat'
 sdfile         = filebase(1:filebaselen) // '_sigma.txt'
 samplefile     = filebase(1:filebaselen) // '_voro_sample.txt'
 stepsizefile     = filebase(1:filebaselen) // '_stepsize.txt'
+source_data_file  = filebase(1:filebaselen) // '_src_data.txt'
+
+
 
 IF(IDIP == 0) NPL=3      ! No. parameters per layer
 IF(IDIP == 1) NPL=4      ! No. parameters per layer with dip
@@ -195,6 +198,10 @@ ALLOCATE(minlimsdRT(NMODE),maxlimsdRT(NMODE),maxpertsdRT(NMODE))
 ALLOCATE(pertsdsdRT(NMODE),pertsdsdscRT(NMODE))
 minlimsdRT  = 0._RP;maxlimsdRT  = 0._RP;maxpertsdRT = 0._RP
 pertsdsdRT  = 0._RP;pertsdsdscRT= 18._RP
+
+! Allocate the source-related arrays:
+ALLOCATE(src_offset(NSRC))
+ALLOCATE(src_depth(NSRC))
 
 IF(I_VPVS == 1)THEN
   IF(iraysum == 1)THEN
@@ -371,14 +378,14 @@ TYPE(objstruc)  :: obj
   !CLOSE(20)
 !ENDIF
 IF(I_RT == 1)THEN
-  !!
-  !! Ray traced travel time data:
-  !!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !! Ray traced travel time data: save in one column !
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   OPEN(20,FILE=infileRT,FORM='formatted',STATUS='OLD',ACTION='READ')
   !ndat = 0
   DO idat=1,NDAT_RT
-     !READ(20,*,IOSTAT=io) obj%periods(1,idat),obj%DobsRT(1,idat)
      READ(20,*,IOSTAT=io) obj%DobsRT(1,idat)
+     !READ(20,*,IOSTAT=io) src_offset(idat), src_depth(idat)
      
      IF (io > 0) THEN
        STOP "Check input.  Something was wrong"
@@ -391,6 +398,43 @@ IF(I_RT == 1)THEN
   ENDDO
   CLOSE(20)! close the file
 ENDIF
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! RAY TRACER Source depths - read from the file: save in two columns, no delimeter please!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+OPEN(20,FILE=source_data_file,FORM='formatted',STATUS='OLD',ACTION='READ')
+!ndat = 0
+DO idat=1,NSRC
+   !READ(20,*,IOSTAT=io) obj%periods(1,idat),obj%DobsRT(1,idat)
+   !READ(20,*,IOSTAT=io) sour(1,idat)
+   READ(20,*,IOSTAT=io) src_offset(idat), src_depth(idat)
+
+   IF (io > 0) THEN
+     STOP "Check input.  Something was wrong"
+   ELSEIF (io < 0) THEN
+     EXIT
+   ELSE
+   !  ndatad=ndatad+1
+   ENDIF
+   !if (i==ndatadmax) stop "number of Dispersion data >= ndatadmax"
+ENDDO
+CLOSE(20)! close the file
+!!
+!! Source depths - read from the file:
+!!
+
+
+
+
+
+
+
+
+
+
+
+
+
 RETURN
 END SUBROUTINE READDATA
 !==============================================================================
