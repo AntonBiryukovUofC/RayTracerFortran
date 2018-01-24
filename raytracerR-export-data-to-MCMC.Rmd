@@ -15,7 +15,7 @@ setwd('/home/geoanton/RayTracerFortran/RayTracer/')
 library(dplyr)
 library(ggplot2)
 dyn.load("./subroutineR-quiet.so")
-
+base.name <- 'test'
 ```
 ## Setup source offsets and depths
 
@@ -35,6 +35,7 @@ NSrc <- 20
 src.df <- tibble(z=runif(NSrc,min=200,max=6500),x=runif(NSrc,min=200,max=4500),y=runif(NSrc,min=200,max=4500))
 srcd <- src.df$z
 srco <- sqrt(src.df$x**2+src.df$y**2)
+src.to.write <- tibble(offset = srco,depth=srcd)
 ```
 
 ## Setup velocity model
@@ -56,6 +57,19 @@ timeP <- rep(0,NSrc)
 timeP <- .Fortran("dff" ,vels=as.numeric(v),depths=as.numeric(d),NLayers=as.integer(NLayers),
                   src_offset=as.numeric(srco),src_depth=as.numeric(srcd),NSrc=as.integer(NSrc),
                   timeP = as.numeric(timeP),keep_delta=as.integer(kd))
+```
+
+and save its results:
+```{r}
+#
+# Save the travel times into a one column file:
+#
+write.table(tibble(t=timeP$timeP),file = sprintf('%s_RT.txt',base.name),sep = ' ',row.names = F,col.names = F)
+#
+# Save the source offsets and depths
+#
+write.table(src.to.write,file = sprintf('%s_src_data.txt',base.name),sep = ' ',row.names = F,col.names = F)
+
 ```
 
 ## Check the ray results if debugging was switched on

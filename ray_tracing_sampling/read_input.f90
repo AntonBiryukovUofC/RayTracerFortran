@@ -98,7 +98,7 @@ ENDDO
 !  infileH      = filebase(1:filebaselen) // '_RF.txt'
 !ENDIF
 !infileT        = filebase(1:filebaselen) // '_T_b.txt'
-infileRT      = filebase(1:filebaselen) // '_RT.dat'
+infileRT      = filebase(1:filebaselen) // '_RT.txt'
 infileref      = filebase(1:filebaselen) // '_vel_ref.txt'
 logfile        = filebase(1:filebaselen) // '_RJMH.log'
 seedfile       = filebase(1:filebaselen) // '_seeds.log'
