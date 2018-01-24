@@ -400,7 +400,7 @@ IF(I_RT == 1)THEN
 ENDIF
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! RAY TRACER Source depths - read from the file: save in two columns, no delimeter please!
+!! RAY TRACER Source depths & offsets- read from the file: save in two columns, no delimeter please!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 OPEN(20,FILE=source_data_file,FORM='formatted',STATUS='OLD',ACTION='READ')
 !ndat = 0
@@ -419,9 +419,6 @@ DO idat=1,NSRC
    !if (i==ndatadmax) stop "number of Dispersion data >= ndatadmax"
 ENDDO
 CLOSE(20)! close the file
-!!
-!! Source depths - read from the file:
-!!
 
 
 

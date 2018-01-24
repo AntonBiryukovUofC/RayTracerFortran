@@ -1,0 +1,88 @@
+---
+title: "RayTracerR Data Saving Test"
+output: html_notebook
+---
+
+# Foreword 
+
+This notebook is used for developing the function for saving the data in the appropriate format for Jan's Parallel Tempered MCMC. Therefore, it mostly goes over the same procedure that is defined in `raytraceR.R`, but saves data after running the simulation.
+
+# Run the simulation
+## Prepare the libraries
+
+```{r}
+setwd('/home/geoanton/RayTracerFortran/RayTracer/')
+library(dplyr)
+library(ggplot2)
+dyn.load("./subroutineR-quiet.so")
+
+```
+## Setup source offsets and depths
+
+From file:
+
+```{r}
+src.df <- read.csv('/home/geoanton/RayTracerFortran/RayTracer/eqdf.csv',header=T)
+srcd <- src.df$z
+srco <- sqrt(src.df$x**2+src.df$y**2)
+NSrc <- length(srcd)
+```
+
+or randomly..:
+
+```{r}
+NSrc <- 20
+src.df <- tibble(z=runif(NSrc,min=200,max=6500),x=runif(NSrc,min=200,max=4500),y=runif(NSrc,min=200,max=4500))
+srcd <- src.df$z
+srco <- sqrt(src.df$x**2+src.df$y**2)
+```
+
+## Setup velocity model
+
+Simple three-layered model here:
+
+```{r}
+v <- c(3100,4270,6000)
+d <- c(2000, 4000)
+NLayers <- length(d)
+
+```
+
+## Run forward model
+
+```{r}
+kd <- 10 # keep rays in rays.dat ???
+timeP <- rep(0,NSrc)
+timeP <- .Fortran("dff" ,vels=as.numeric(v),depths=as.numeric(d),NLayers=as.integer(NLayers),
+                  src_offset=as.numeric(srco),src_depth=as.numeric(srcd),NSrc=as.integer(NSrc),
+                  timeP = as.numeric(timeP),keep_delta=as.integer(kd))
+```
+
+## Check the ray results if debugging was switched on
+```{r fig.height=10, fig.width=10}
+read.rays <- function(file = "rays.dat",nrays=1)
+{
+  ind.delta <- 2*seq(nrays)-1
+  df <- tibble()
+  for (i in seq(nrays))
+  {
+    delta <- c(0,scan(file,skip = ind.delta[i]-1,nlines = 1))
+    depth <- c(0,scan(file,skip = ind.delta[i],nlines = 1))
+    ray <- i
+    df <- bind_rows(df,tibble(delta=delta,depth=depth,ray=ray))
+  }
+  df <- df %>% group_by(ray) %>% mutate(depth.cum = cumsum(depth), delta.cum = cumsum(delta) )
+  return(df)
+}
+rays.df <- read.rays(nrays=NSrc)
+p <- ggplot(data=rays.df,aes(x=delta.cum,y=depth.cum,col = factor(ray))) + geom_line() + scale_y_reverse()+geom_point()+geom_hline(yintercept = c(0,d),linetype=2)
+ggsave(p,filename = './pngs/ray_example.png',width = 7,height = 4)
+print(p)
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
