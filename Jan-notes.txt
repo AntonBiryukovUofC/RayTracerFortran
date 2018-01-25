@@ -30,4 +30,4 @@ in makefile:
 
 libswd -> my ray tracing codes
 Makefile.compiler - set the compilers to gfortran or pgfortran.
-comment out linear algebra packages
+comment out linear algebra packages 

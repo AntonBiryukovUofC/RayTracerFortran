@@ -42,11 +42,11 @@ blockcounts = (/ 1,  NLMX*NPL, NLMX*NPL , (NLMX+1)*NPL*NPL,  NPL*NLMX,   NPL*NLM
 oldtypes(1)     = MPI_INTEGER
 oldtypes(2)     = MPI_DOUBLE_PRECISION
 oldtypes(3)     = MPI_INTEGER
-oldtypes(4:16)   = MPI_DOUBLE_PRECISION
-oldtypes(17:21) = MPI_INTEGER
-oldtypes(22:25)    = MPI_DOUBLE_PRECISION
-oldtypes(26:29) = MPI_INTEGER
-oldtypes(30:47) = MPI_DOUBLE_PRECISION
+oldtypes(4:10)   = MPI_DOUBLE_PRECISION
+oldtypes(11:15) = MPI_INTEGER
+oldtypes(16:19)    = MPI_DOUBLE_PRECISION
+oldtypes(20:23) = MPI_INTEGER
+oldtypes(24:27) = MPI_DOUBLE_PRECISION
 
 call mpi_get_address(obj%k,offsets(1),ierr)
 call mpi_get_address(obj%voro,offsets(2),ierr)
@@ -54,28 +54,28 @@ call mpi_get_address(obj%voroidx,offsets(3),ierr)
 call mpi_get_address(obj%par,offsets(4),ierr)
 call mpi_get_address(obj%hiface,offsets(5),ierr)
 call mpi_get_address(obj%ziface,offsets(6),ierr)
-call mpi_get_address(obj%sdparRT,offsets(10),ierr)
-call mpi_get_address(obj%sdaveRT,offsets(14),ierr)
-call mpi_get_address(obj%arpar,offsets(15),ierr)
-call mpi_get_address(obj%arparRT,offsets(16),ierr)
-call mpi_get_address(obj%idxar,offsets(17),ierr)
-call mpi_get_address(obj%idxarRT,offsets(18),ierr)
-call mpi_get_address(obj%gvoroidx,offsets(19),ierr)
-call mpi_get_address(obj%nunique,offsets(20),ierr)
-call mpi_get_address(obj%NFP,offsets(21),ierr)
-call mpi_get_address(obj%beta,offsets(22),ierr)
-call mpi_get_address(obj%logL,offsets(23),ierr)
-call mpi_get_address(obj%logPr,offsets(24),ierr)
-call mpi_get_address(obj%tcmp,offsets(25),ierr)
-call mpi_get_address(obj%ireject_bd,offsets(26),ierr)
-call mpi_get_address(obj%iaccept_bd,offsets(27),ierr)
-call mpi_get_address(obj%ireject_bds,offsets(28),ierr)
-call mpi_get_address(obj%iaccept_bds,offsets(29),ierr)
+call mpi_get_address(obj%sdparRT,offsets(7),ierr)
+call mpi_get_address(obj%sdaveRT,offsets(8),ierr)
+call mpi_get_address(obj%arpar,offsets(9),ierr)
+call mpi_get_address(obj%arparRT,offsets(10),ierr)
+call mpi_get_address(obj%idxar,offsets(11),ierr)
+call mpi_get_address(obj%idxarRT,offsets(12),ierr)
+call mpi_get_address(obj%gvoroidx,offsets(13),ierr)
+call mpi_get_address(obj%nunique,offsets(14),ierr)
+call mpi_get_address(obj%NFP,offsets(15),ierr)
+call mpi_get_address(obj%beta,offsets(16),ierr)
+call mpi_get_address(obj%logL,offsets(17),ierr)
+call mpi_get_address(obj%logPr,offsets(18),ierr)
+call mpi_get_address(obj%tcmp,offsets(19),ierr)
+call mpi_get_address(obj%ireject_bd,offsets(20),ierr)
+call mpi_get_address(obj%iaccept_bd,offsets(21),ierr)
+call mpi_get_address(obj%ireject_bds,offsets(22),ierr)
+call mpi_get_address(obj%iaccept_bds,offsets(23),ierr)
 !! RT data
-call mpi_get_address(obj%DobsRT,offsets(43),ierr)
-call mpi_get_address(obj%DpredRT,offsets(44),ierr)
-call mpi_get_address(obj%DresRT,offsets(45),ierr)
-call mpi_get_address(obj%DarRT,offsets(46),ierr)
+call mpi_get_address(obj%DobsRT,offsets(24),ierr)
+call mpi_get_address(obj%DpredRT,offsets(25),ierr)
+call mpi_get_address(obj%DresRT,offsets(26),ierr)
+call mpi_get_address(obj%DarRT,offsets(27),ierr)
 
 DO ifield=2,SIZE(offsets)
   offsets(ifield) = offsets(ifield) - offsets(1)
