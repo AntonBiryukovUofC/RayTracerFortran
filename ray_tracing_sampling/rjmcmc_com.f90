@@ -26,7 +26,6 @@ MODULE RJMCMC_COM
    INTEGER(KIND=IB) :: ISMPPRIOR  !! Sample from the prior (sets logL = 1._RP)
    INTEGER(KIND=IB) :: ISETSEED   !! Fix the random seed 
    INTEGER(KIND=IB) :: IEXCHANGE  !! 1 = turn on exchange moves (parallel tempering)
-   INTEGER(KIND=IB) :: IDIP       !! 1 = allow dipping layers (dip and strike)
 
 !!
 !! Model and data dimensions
@@ -46,20 +45,11 @@ MODULE RJMCMC_COM
    REAL(KIND=RP), ALLOCATABLE, DIMENSION(:):: src_depth      ! The offset (source-receiver distance projected on the surface)
 
    CHARACTER(len=64) :: filebasefile      = 'filebase.txt'
-   INTEGER(KIND=IB)                 :: NRF1
-   INTEGER,PARAMETER :: maxlay = 50
 
 !! 
 !! Forward RF specific 
 !!
-  INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:):: idxpar
-  LOGICAL,ALLOCATABLE,DIMENSION(:)         :: isoflag
   !!                                                      thick      rho      alph     beta    %P    %S    tr    pl    st    di
-  REAL(KIND=SP),DIMENSION(10),PARAMETER:: curmod_glob = (/10000._RP,2600._RP,6000._RP,3600._RP,0._RP,0._RP,0._RP,0._RP,0._RP,0._RP/)
-  INTEGER :: raysumfail = 0_IB
-  INTEGER :: NTR
-  REAL(KIND=SP),ALLOCATABLE,DIMENSION(:,:,:)   :: synth_cart,synth_ph
-  INTEGER(KIND=IB)          :: numph,iphase
   REAL(KIND=RP)             :: hmx                !! Max crustal depth in km
   REAL(KIND=RP),DIMENSION(2):: sdmn               !! Min standard deviation
   REAL(KIND=RP),DIMENSION(2):: sdmx               !! Max standard deviation
@@ -141,9 +131,9 @@ MODULE RJMCMC_COM
    CHARACTER(LEN=64) :: seedfile
    CHARACTER(len=64) :: mapfile
    CHARACTER(len=64) :: covfile
-   CHARACTER(LEN=64)  :: obsfile
+  ! CHARACTER(LEN=64)  :: obsfile
    CHARACTER(LEN=64)  :: arfile
-   CHARACTER(LEN=64)  :: predfile
+   !CHARACTER(LEN=64)  :: predfile
    CHARACTER(LEN=64)  :: obsfileRT
    CHARACTER(LEN=64)  :: arfileRT
    CHARACTER(LEN=64)  :: predfileRT
@@ -206,7 +196,7 @@ MODULE RJMCMC_COM
 
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:)   :: sdevm  ! Std dev for perturbations
 !!
-!!  Structures for objects and data 
+!!  Structures for objects and data  a
 !! Below, SWD is replaced with RT (ray tracing)
 !!
   INTEGER :: imcmc1 = 1   !! Counter for models at T=1 (needs to survive checkpointing!)

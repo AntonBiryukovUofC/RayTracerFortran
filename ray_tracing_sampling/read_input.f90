@@ -25,20 +25,17 @@ READ(20,*) ICOV
 READ(20,*) ENOS       !! Even numbered order statistic on k (avoids thin layers)
 READ(20,*) IPOIPR     !! Applies Poisson prior on k
 READ(20,*) IAR
-!READ(20,*) I_VARPAR
+READ(20,*) NPL !! Number of parameters per layer
+READ(20,*) I_VARPAR
 READ(20,*) IBD_SINGLE
-!READ(20,*) I_RV       !! Invert Radial and Vertical seismogram components
-!READ(20,*) I_T        !! Invert Transverse component as well
-READ(20,*) I_RT      !! Invert SWD data
+READ(20,*) I_RT      !! Invert RT data
 READ(20,*) I_VREF
 READ(20,*) I_VPVS
 READ(20,*) ISMPPRIOR
 READ(20,*) ISETSEED
 READ(20,*) IEXCHANGE
-READ(20,*) IDIP
 READ(20,*) NDAT_RT   !! No. RT data
 READ(20,*) NMODE      !! No. RT modes (Phases in our case)
-!READ(20,*) NTIME      !! No. time samples
 READ(20,*) NSRC       !! No. of raypaths computed 
 READ(20,*) NLMN       !! Max number of layers
 READ(20,*) NLMX       !! Max number of layers
@@ -49,21 +46,20 @@ READ(20,*) dTlog      !! Temperature increment
 READ(20,*) lambda     !! Lambda for Poisson prior on k
 READ(20,*) hmx        !! Max. partition depth
 READ(20,*) hmin       !! Min. layer thickness (must be small enough to not violate detailed balance)
-!READ(20,*) armxH      !! Max. AR prediction size
-!READ(20,*) armxV      !! Max. AR prediction size
-READ(20,*) armxRT    !! Max. AR prediction size for Ray Tracer
+print *,'1st'
 READ(20,*) TCHCKPT    !! Checkpointing interval in s
-!READ(20,*) shift2     !! time series shift for raysum
-!READ(20,*) width2     !! peak width for raysum (-1 returns impulse response)
-!READ(20,*) wl         !! water level for ray3d
-!READ(20,*) sampling_dt!! time series sampling rate raysum
 READ(20,*) dVs        !! Vs one sided prior width (relative to background model)
 READ(20,*) dVpVs      !! VpVs ratio one sided prior width
+print *,'2ndd'
 READ(20,*) sdmn       !! data (residual) error standard deviation prior lower limit
+print *,'HI'
 READ(20,*) sdmx       !! data (residual) error standard deviation prior upper limit
-READ(20,*) iraysum    !! Use raysum (1) or ray3d (0)?
-!READ(20,*) VpVsmin   !! minimum VpVs ratio
-!READ(20,*) VpVsmax   !! maximum VpVs ratio
+print *,'3rdd'
+READ(20,*) VpVsmin   !! minimum VpVs ratio
+print *,'4th'
+READ(20,*) VpVsmax   !! maximum VpVs ratio
+print *,'Done!'
+
 CLOSE(20)
 
 !! Allocate raysum oarameters
@@ -71,7 +67,6 @@ CLOSE(20)
 !CALL ALLOC_RAYSUM()
 !! Read geometry file:
 !CALL readgeom(modname,baz2,slow2,sta_dx,sta_dy,ntr)
-NRF1 = ntr
   
 !IF(iraysum /= 1)THEN
 !  slow2 = slow2 * 1000._RP
@@ -104,8 +99,8 @@ logfile        = filebase(1:filebaselen) // '_RJMH.log'
 seedfile       = filebase(1:filebaselen) // '_seeds.log'
 mapfile        = filebase(1:filebaselen) // '_map_voro.dat'
 arfile         = filebase(1:filebaselen) // '_ar.dat'
-predfile       = filebase(1:filebaselen) // '_mappred.dat'
-obsfile        = filebase(1:filebaselen) // '_obs.dat'
+!predfile       = filebase(1:filebaselen) // '_mappred.dat'
+!obsfile        = filebase(1:filebaselen) // '_obs.dat'
 arfileRT      = filebase(1:filebaselen) // '_maparRT.dat'
 predfileRT    = filebase(1:filebaselen) // '_mappredRT.dat'
 obsfileRT     = filebase(1:filebaselen) // '_obsRT.dat'
@@ -117,9 +112,9 @@ source_data_file  = filebase(1:filebaselen) // '_src_data.txt'
 
 
 
-IF(IDIP == 0) NPL=3      ! No. parameters per layer
-IF(IDIP == 1) NPL=4      ! No. parameters per layer with dip
-IF(IDIP == 2) NPL=5      ! No. parameters per layer with strike and dip
+!IF(IDIP == 0) NPL=3      ! No. parameters per layer
+!IF(IDIP == 1) NPL=4      ! No. parameters per layer with dip
+!IF(IDIP == 2) NPL=5      ! No. parameters per layer with strike and dip
 
 !NTIME2 = NTIME+NSRC-1  ! Number time samples for zero padded observations
 !NRRG   = NTIME2 + NTIME - 1 ! No. points for convolution RRG
@@ -172,7 +167,7 @@ ENDIF
 !ENDIF
 
 ALLOCATE( sdbuf(3,NRF1,NBUF) ) 
-ALLOCATE(idxpar(NPL),sdevm((NLMX*NPL)+NPL-1,NLMX))
+ALLOCATE(sdevm((NLMX*NPL)+NPL-1,NLMX))
 sdevm = 0._RP
 
 ALLOCATE(minlim(NPL),maxlim(NPL),maxpert(NPL),pertsd(NPL),pertsdsc(NPL))
@@ -203,26 +198,6 @@ pertsdsdRT  = 0._RP;pertsdsdscRT= 18._RP
 ALLOCATE(src_offset(NSRC))
 ALLOCATE(src_depth(NSRC))
 
-IF(I_VPVS == 1)THEN
-  IF(iraysum == 1)THEN
-    idxpar   = (/ 1, 4, 3 /)        !! Sample Vs
-    IF(IDIP == 1)idxpar   = (/ 1, 4, 3 , 10 /)     !! Sample dip
-    IF(IDIP == 2)idxpar   = (/ 1, 4, 3 ,  9, 10 /) !! Sample strike and dip
-  ELSE
-    !idxpar   = (/ 3, 4, 1 /)        !! Sample Vs
-    !IF(IDIP == 1)idxpar   = (/ 3, 4, 1 , 7 /)    !! Sample dip
-    !IF(IDIP == 2)idxpar   = (/ 3, 4, 1 , 6, 7 /) !! Sample strike and dip
-    idxpar   = (/ 1, 4, 3 /)        !! Sample Vs
-    IF(IDIP == 1)idxpar   = (/ 1, 4, 3, 7 /)    !! Sample dip
-    IF(IDIP == 2)idxpar   = (/ 1, 4, 3, 6, 7 /) !! Sample strike and dip
-  ENDIF
-ELSEIF(I_VPVS == -1)THEN
-  idxpar(1:2)   = (/ 1, 4 /)        !! Sample Vs
-ELSE
-  idxpar   = (/ 1, 3, 4 /)        !! Sample Vp
-  IF(IDIP == 1)idxpar   = (/ 1, 3, 4 , 10 /)     !! Sample dip
-  IF(IDIP == 2)idxpar   = (/ 1, 3, 4 ,  9, 10 /) !! Sample strike and dip
-ENDIF
 !!
 !!  Prior bounds
 !! (Note: Density is empirical through Birch's Law)
@@ -233,19 +208,14 @@ IF(I_VPVS == 1)THEN
   !! Sample Vs and VpVs ratio
   minlim(1:3) = (/ hmin, -dVs, -dVpVs/)
   maxlim(1:3) = (/ hmx,   dVs,  dVpVs/)
-ELSEIF(I_VPVS == -1)THEN
+ELSEIF(I_VPVS == 0)THEN
   !! Sample Vs and VpVs ratio
-  minlim(1:2) = (/ hmin, -dVs/)
-  maxlim(1:2) = (/ hmx,   dVs/)
+  minlim(1:2) = (/ hmin, 1500/)
+  maxlim(1:2) = (/ hmx,   10000/)
 ENDIF
-IF(IDIP == 1)THEN
-  minlim(4) = 1.0_RP
-  maxlim(4) = 45.0_RP !! Frederiksen paper suggest method only stable for dip < 50 deg.
-ENDIF
-IF(IDIP == 2)THEN
-  minlim(4:5) = (/   0.0_RP,   0.0_RP/)
-  maxlim(4:5) = (/  30.0_RP, 100.0_RP/)
-ENDIF
+
+
+
 maxpert = maxlim-minlim
 pertsd = maxpert/pertsdsc
 
@@ -291,7 +261,6 @@ IF(rank == src)THEN
   WRITE(6,*) 'ISMPPRIOR = ', ISMPPRIOR
   WRITE(6,*) 'ISETSEED  = ', ISETSEED
   WRITE(6,*) 'IEXCHANGE = ', IEXCHANGE
-  WRITE(6,*) 'IDIP      = ', IDIP
   !WRITE(6,*) 'NTIME     = ', NTIME      !! No. time samples
   WRITE(6,*) 'NSRC      = ', NSRC       !! No. of rays (sources)
   WRITE(6,*) 'NLMN      = ', NLMN       !! Max number of layers

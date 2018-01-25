@@ -246,7 +246,7 @@ IF(IMAP == 1)THEN
    tend2 = MPI_WTIME()
    WRITE(6,*) 'time = ',tend2-tstart2
    WRITE(6,*) 'logL = ',obj%logL
-   CALL SAVEREPLICA(obj,predfile,obsfile,arfile,predfileRT,obsfileRT,arfileRT)
+   CALL SAVEREPLICA(obj,predfileRT,obsfileRT)
    IF(ioutside == 1)WRITE(*,*)'FAILED in starting model'
   ENDIF
   CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
@@ -1817,7 +1817,8 @@ RETURN
 END SUBROUTINE SAVESAMPLE
 
 !=======================================================================
-SUBROUTINE SAVEREPLICA(obj)
+SUBROUTINE SAVEREPLICA(obj,predfile,obsfile)
+
 !=======================================================================
 USE MPI
 USE RJMCMC_COM
@@ -1825,78 +1826,14 @@ IMPLICIT NONE
 
 INTEGER(KIND=IB) :: i
 TYPE (objstruc)  :: obj      ! Best object
+CHARACTER(64) :: predfile, obsfile
 
 WRITE(6,*) 'Global best model:'
 CALL PRINTPAR(obj)
 WRITE(6,*) 'Global best logL = ',obj%logL
 
-!IF(I_RV == 1)THEN
-  !OPEN(UNIT=50,FILE=predfile,FORM='formatted',STATUS='REPLACE', &
-  !ACTION='WRITE',RECL=8192)
-!  DO i = 1,NRF1
- !   WRITE(50,208) obj%DpredR(i,:)
- ! ENDDO
- ! DO i = 1,NRF1
- !   WRITE(50,208) obj%DpredV(i,:)
- ! ENDDO
- ! DO i = 1,NRF1
- !   WRITE(50,208) obj%DpredT(i,:)
- ! ENDDO
- ! DO i = 1,NRF1
- !   WRITE(50,208) obj%S(i,:)
- ! ENDDO
-  !WRITE(6,*)'Done writing predicted V and H components.'
-  !CLOSE(50)
-
-  !OPEN(UNIT=50,FILE=obsfile,FORM='formatted',STATUS='REPLACE', &
-  !ACTION='WRITE',RECL=8192)
-  !DO i = 1,NRF1
-  !  WRITE(50,208) obj%DobsR(i,:)
-  !ENDDO
- ! DO i = 1,NRF1
-  !  WRITE(50,208) obj%DobsV(i,:)
-  !ENDDO
-  !DO i = 1,NRF1
-  !  WRITE(50,208) obj%DobsT(i,:)
-  !ENDDO
-  !WRITE(6,*)'Done writing observed V and H components.'
-  !CLOSE(50)
-
-  !OPEN(UNIT=50,FILE=arfile,FORM='formatted',STATUS='REPLACE', &
-  !ACTION='WRITE',RECL=8192)
-  !DO i = 1,NRF1
-  !  WRITE(50,208) obj%DarR(i,:)
-  !  WRITE(50,208) obj%DarV(i,:)
-  !  WRITE(50,208) obj%DarT(i,:)
-  !ENDDO
-  !CLOSE(50)
-!ELSEIF(I_RV == -1)THEN
-  !OPEN(UNIT=50,FILE=predfile,FORM='formatted',STATUS='REPLACE', &
-  !ACTION='WRITE',RECL=8192)
-  !DO i = 1,NRF1
-  !  WRITE(50,208) obj%DpredR(i,:)
-  !ENDDO
-  !WRITE(6,*)'Done writing predicted RF.'
-  !CLOSE(50)
-
-  !OPEN(UNIT=50,FILE=obsfile,FORM='formatted',STATUS='REPLACE', &
-  !ACTION='WRITE',RECL=8192)
-  !DO i = 1,NRF1
-  !  WRITE(50,208) obj%DobsR(i,:)
-  !ENDDO
-  !WRITE(6,*)'Done writing observed RF.'
-  !CLOSE(50)
-
-  !OPEN(UNIT=50,FILE=arfile,FORM='formatted',STATUS='REPLACE', &
- ! ACTION='WRITE',RECL=8192)
- ! DO i = 1,NRF1
- !   WRITE(50,208) obj%DarR(i,:)
- ! ENDDO
-  !CLOSE(50)
-
-!ENDIF
 IF(I_RT == 1)THEN
-  OPEN(UNIT=50,FILE=predfileRT,FORM='formatted',STATUS='REPLACE', &
+  OPEN(UNIT=50,FILE=predfile,FORM='formatted',STATUS='REPLACE', &
   ACTION='WRITE',RECL=8192)
   DO i = 1,NMODE
     WRITE(50,208) obj%DpredRT(i,:)
@@ -1904,7 +1841,7 @@ IF(I_RT == 1)THEN
   WRITE(6,*)'Done writing predicted Ray Tracer TTimes.'
   CLOSE(50)
 
-  OPEN(UNIT=50,FILE=obsfileRT,FORM='formatted',STATUS='REPLACE', &
+  OPEN(UNIT=50,FILE=obsfile,FORM='formatted',STATUS='REPLACE', &
   ACTION='WRITE',RECL=8192)
   DO i = 1,NMODE
     WRITE(50,208) obj%DobsRT(i,:)
@@ -1912,12 +1849,12 @@ IF(I_RT == 1)THEN
   WRITE(6,*)'Done writing observed Ray Tracer TTimes.'
   CLOSE(50)
 
-  OPEN(UNIT=50,FILE=arfileRT,FORM='formatted',STATUS='REPLACE', &
-  ACTION='WRITE',RECL=8192)
-  DO i = 1,NMODE
-    WRITE(50,208) obj%DarRT(i,:)
-  ENDDO
-  CLOSE(50)
+  !OPEN(UNIT=50,FILE=arfileRT,FORM='formatted',STATUS='REPLACE', &
+  !ACTION='WRITE',RECL=8192)
+  !DO i = 1,NMODE
+  !  WRITE(50,208) obj%DarRT(i,:)
+  !ENDDO
+  !CLOSE(50)
 
 ENDIF
 208 FORMAT(5000ES20.10)

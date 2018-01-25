@@ -50,8 +50,8 @@ REAL(KIND=RP),DIMENSION(NDAT_RT)     :: DpredRT
 REAL(KIND=RP),DIMENSION(NMODE)        :: EtmpRT
 REAL(KIND=RP)                         :: logL,factvs,factvpvs
 REAL(KIND=RP)                         :: tstart, tend, tcmp   ! Overall time 
-REAL(KIND=RP),DIMENSION(obj%k)     :: vels
-REAL(KIND=RP),DIMENSION(obj%k-1)     :: depths
+REAL(KIND=RP),DIMENSION(obj%k+1)     :: vels
+REAL(KIND=RP),DIMENSION(obj%k)     :: thickness
 
 LOGICAL :: ISNAN
 
@@ -121,11 +121,11 @@ ENDIF
 !     curmod2(1:obj%nunique+1+NPREM,1)/1000.,DpredRT,&
 !     periods,NDAT_RT,ierr_rt)
 
-vels = obj%voro(:,3) ! Retrieve P-wave velocities here (alphas)
-depths = obj%voro(2:obj%k,1) ! Retrieve Layer thicknesses
+vels = obj%voro(1:(obj%k+1),2) ! Retrieve P-wave velocities here (alphas)
+thickness = obj%hiface(1:obj%k) ! Retrieve Layer thicknesses
 
 
-CALL TraceRays(vels,depths,obj%k-1,src_offset,src_depth,NSRC,DpredRT,1)
+CALL TraceRays(vels,thickness,obj%k,src_offset,src_depth,NSRC,DpredRT,1)
 
 
 IF(ierr_rt /= 0)THEN

@@ -26,17 +26,10 @@ I will populate later this section, after I "clean" this repository. For now, lo
 # TODO:
 
 ## Parallel tempering Fortran codes:
-
 1. READPARFILE() needs adapting for Ray Tracer (RT)
 2. READDATA() needs adapting for Ray Tracer travel times 
 3. Figure out what INTERPLAYER routine does 
 4. Fix PROPOSAL_SDRT() for ray tracing
-5. Hard-code or always set IDIP == 0
-6. Ask Jan about this:
-`prjmh_temper_rf.f90:1812:17:
-
- 213 FORMAT(a23,I,F8.4)
-                 1
-Error: Nonnegative width required in format string at (1)`
-
-7. DGELSS -- gives undefined reference error in `prjmh_temper_rf.f90`
+9. in the filebase.txt, first line is string length, second line is the string to be prepended to all filenames.
+10. Fix MPI Alloc with the ojecttypes comparing them against structure definition in `rjmcmc_com`
+11. 

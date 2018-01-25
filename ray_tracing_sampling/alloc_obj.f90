@@ -24,10 +24,10 @@ call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dextent, ierr)
 !!
 !!                k   voro     voroidx           par          hiface     ziface      
 blockcounts = (/ 1,  NLMX*NPL, NLMX*NPL , (NLMX+1)*NPL*NPL,  NPL*NLMX,   NPL*NLMX,&
-!!               sdparR    sdparV   sdparT   sdparRT   sdaveH    sdaveV   sdaveT   sdaveRT
-                 NRF1,      NRF1,    NRF1,    NMODE,     NRF1,     NRF1,    NRF1,    NMODE,&
-!!               arpar   arparRT idxar   idxarRT  gvoroidx nunique NFP
-                 3*NRF1,  NMODE,  3*NRF1,  NMODE,     NPL-1,     1,    1, & 
+!!               sdparRT   sdaveRT
+                 NMODE,    NMODE,&
+!!               arparRT idxarRT  gvoroidx nunique NFP
+                 NMODE,   NMODE,     NPL-1,     1,    1, & 
 !!               beta    logL     logPr tcmp  ireject_bd  iaccept_bd ireject_bds  iaccept_bds 
                   1,       1,       1,    1,      1,          1,         1,          1,&
 !!               DobsR           DpredR        DobsV       DpredV         DobsT        DpredT
@@ -37,36 +37,6 @@ blockcounts = (/ 1,  NLMX*NPL, NLMX*NPL , (NLMX+1)*NPL*NPL,  NPL*NLMX,   NPL*NLM
 !!                DobsRT           DpredRT        DresRT       DarRT           periods
                  NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT /)
 
-!  INTEGER :: objtype3     !! Name of objtype for MPI sending
-!   TYPE :: objstruc
-!      INTEGER(KIND=IB)                        :: k          ! No. nodes
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: voro       ! 1D layer nodes
-!      INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:,:):: voroidx    ! 1D layer nodes index
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: par     ! Forward parameters
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: hiface
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: ziface
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: sdparRT      !! Std dev RT data
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: sdaveRT      !! Std dev RT data
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: arpar         !! AR model forward parameters
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: arparRT      !! AR model forward parameters
-!      INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:):: idxar      !! AR on/off index (1=on)
-!      INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:):: idxarRT      !! AR on/off index (1=on)
-!      INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:):: gvoroidx   !! Index of live parameters on birth/death node
-!      INTEGER(KIND=IB)                        :: nunique     !! 
-!      INTEGER(KIND=IB)                        :: NFP         !! Number forward parameters
-!      REAL(KIND=RP)                           :: beta
-!      REAL(KIND=RP)                           :: logL        !! log likelihood
-!      REAL(KIND=RP)                           :: logPr       !! log Prior probability ratio
-!      REAL(KIND=RP)                           :: tcmp
-!      INTEGER(KIND=IB)                        :: ireject_bd = 0
-!      INTEGER(KIND=IB)                        :: iaccept_bd = 0
-!      INTEGER(KIND=IB)                        :: ireject_bds = 0
-!      INTEGER(KIND=IB)                        :: iaccept_bds = 0
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: Dobs_tt     !! Observed data RT
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: Dpred_tt    !! Predicted RT data for trial model
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: Dres_tt     !! RT data residuals for trial model
-!      REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: Dar_tt      !! RT autoregressive model predicted data
-!   END TYPE objstruc
 
 !! Oldtypes
 oldtypes(1)     = MPI_INTEGER
@@ -84,13 +54,7 @@ call mpi_get_address(obj%voroidx,offsets(3),ierr)
 call mpi_get_address(obj%par,offsets(4),ierr)
 call mpi_get_address(obj%hiface,offsets(5),ierr)
 call mpi_get_address(obj%ziface,offsets(6),ierr)
-!call mpi_get_address(obj%sdparR,offsets(7),ierr)
-!call mpi_get_address(obj%sdparV,offsets(8),ierr)
-!call mpi_get_address(obj%sdparT,offsets(9),ierr)
 call mpi_get_address(obj%sdparRT,offsets(10),ierr)
-!call mpi_get_address(obj%sdaveH,offsets(11),ierr)
-!call mpi_get_address(obj%sdaveV,offsets(12),ierr)
-!call mpi_get_address(obj%sdaveT,offsets(13),ierr)
 call mpi_get_address(obj%sdaveRT,offsets(14),ierr)
 call mpi_get_address(obj%arpar,offsets(15),ierr)
 call mpi_get_address(obj%arparRT,offsets(16),ierr)
@@ -107,25 +71,11 @@ call mpi_get_address(obj%ireject_bd,offsets(26),ierr)
 call mpi_get_address(obj%iaccept_bd,offsets(27),ierr)
 call mpi_get_address(obj%ireject_bds,offsets(28),ierr)
 call mpi_get_address(obj%iaccept_bds,offsets(29),ierr)
-!call mpi_get_address(obj%DobsR,offsets(30),ierr)
-!call mpi_get_address(obj%DpredR,offsets(31),ierr)
-!call mpi_get_address(obj%DobsV,offsets(32),ierr)
-!call mpi_get_address(obj%DpredV,offsets(33),ierr)
-!call mpi_get_address(obj%DobsT,offsets(34),ierr)
-!call mpi_get_address(obj%DpredT,offsets(35),ierr)
-!call mpi_get_address(obj%S,offsets(36),ierr)
-!call mpi_get_address(obj%DresR,offsets(37),ierr)
-!call mpi_get_address(obj%DresV,offsets(38),ierr)
-!call mpi_get_address(obj%DresT,offsets(39),ierr)
-!call mpi_get_address(obj%DarR,offsets(40),ierr)
-!call mpi_get_address(obj%DarV,offsets(41),ierr)
-!call mpi_get_address(obj%DarT,offsets(42),ierr)
 !! RT data
 call mpi_get_address(obj%DobsRT,offsets(43),ierr)
 call mpi_get_address(obj%DpredRT,offsets(44),ierr)
 call mpi_get_address(obj%DresRT,offsets(45),ierr)
 call mpi_get_address(obj%DarRT,offsets(46),ierr)
-!call mpi_get_address(obj%periods,offsets(47),ierr)
 
 DO ifield=2,SIZE(offsets)
   offsets(ifield) = offsets(ifield) - offsets(1)

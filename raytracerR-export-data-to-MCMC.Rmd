@@ -15,7 +15,7 @@ setwd('/home/geoanton/RayTracerFortran/RayTracer/')
 library(dplyr)
 library(ggplot2)
 dyn.load("./subroutineR-quiet.so")
-base.name <- 'test'
+base.name <- 'test_1'
 ```
 ## Setup source offsets and depths
 
@@ -31,7 +31,7 @@ NSrc <- length(srcd)
 or randomly..:
 
 ```{r}
-NSrc <- 20
+NSrc <- 10
 src.df <- tibble(z=runif(NSrc,min=200,max=6500),x=runif(NSrc,min=200,max=4500),y=runif(NSrc,min=200,max=4500))
 srcd <- src.df$z
 srco <- sqrt(src.df$x**2+src.df$y**2)
