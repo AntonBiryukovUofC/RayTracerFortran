@@ -153,7 +153,8 @@ CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
 !READ(20,*) tmpmap
 !CLOSE(20)
 
-obj%k       = INT(tmpmap(1),IB)   !! No. interfaces + 1 (e.g. 3 makes 2 layers and a half space)
+!obj%k       = INT(tmpmap(1),IB)   !! No. interfaces + 1 (e.g. 3 makes 2 layers and a half space)
+obj%k = 2
 obj%NFP     = (obj%k * NPL)       !! No. forward parameters; NPL -> max No. parameters per layer
 obj%voro    = 0._RP               !! Main array of layer nodes
 obj%voroidx = 0

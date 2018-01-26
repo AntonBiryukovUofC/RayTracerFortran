@@ -124,10 +124,13 @@ ENDDO
 vels = obj%voro(1:(obj%k+1),2) ! Retrieve P-wave velocities here (alphas)
 thickness = obj%hiface(1:obj%k) ! Retrieve Layer thicknesses
 print *,'About to calc LL'
-print *,obj%k
+print *,'obj%k = ',obj%k
+print *,'vels =',vels
+print *,'thickness =',thickness
+
 CALL TraceRays(vels,thickness,obj%k,src_offset,src_depth,NSRC,DpredRT,1)
 
-
+print *,'timesP =',DpredRT
 IF(ierr_rt /= 0)THEN
   logL = -HUGE(1._RP)
   RETURN
