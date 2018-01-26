@@ -32,4 +32,5 @@ I will populate later this section, after I "clean" this repository. For now, lo
 4. Fix PROPOSAL_SDRT() for ray tracing
 9. in the filebase.txt, first line is string length, second line is the string to be prepended to all filenames.
 10. Fix MPI Alloc with the ojecttypes comparing them against structure definition in `rjmcmc_com`
-11. 
+11. NRF1 ? replaced with 1
+12. Commented weird lines with partmp at IDIP==1

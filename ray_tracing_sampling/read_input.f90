@@ -166,7 +166,7 @@ ENDIF
 !  width = 2._SP
 !ENDIF
 
-ALLOCATE( sdbuf(3,NRF1,NBUF) ) 
+ALLOCATE( sdbuf(3,1,NBUF) )  ! NRF1 replaced with 1
 ALLOCATE(sdevm((NLMX*NPL)+NPL-1,NLMX))
 sdevm = 0._RP
 
@@ -174,8 +174,8 @@ ALLOCATE(minlim(NPL),maxlim(NPL),maxpert(NPL),pertsd(NPL),pertsdsc(NPL))
 minlim   = 0._RP;maxlim   = 0._RP;maxpert  = 0._RP
 pertsd   = 0._RP;pertsdsc = 30._RP
 
-ALLOCATE(minlimar(3*NRF1),maxlimar(3*NRF1),maxpertar(3*NRF1))
-ALLOCATE(pertarsd(3*NRF1),pertarsdsc(3*NRF1))
+ALLOCATE(minlimar(3*1),maxlimar(3*1),maxpertar(3*1)) ! NRF1 replaced with 1
+ALLOCATE(pertarsd(3*1),pertarsdsc(3*1))! NRF1 replaced with 1
 minlimar  = 0._RP;maxlimar  = 0._RP;maxpertar = 0._RP
 pertarsd  = 0._RP;pertarsdsc= 18._RP
 
@@ -184,8 +184,8 @@ ALLOCATE(pertarsdRT(NMODE),pertarsdscRT(NMODE))
 minlimarRT  = 0._RP;maxlimarRT  = 0._RP;maxpertarRT = 0._RP
 pertarsdRT  = 0._RP;pertarsdscRT= 18._RP
 
-ALLOCATE(minlimsd(NRF1),maxlimsd(NRF1),maxpertsd(NRF1))
-ALLOCATE(pertsdsd(NRF1),pertsdsdsc(NRF1))
+ALLOCATE(minlimsd(1),maxlimsd(1),maxpertsd(1))
+ALLOCATE(pertsdsd(1),pertsdsdsc(1))
 minlimsd  = 0._RP;maxlimsd  = 0._RP;maxpertsd = 0._RP
 pertsdsd  = 0._RP;pertsdsdsc= 18._RP
 
@@ -210,8 +210,8 @@ IF(I_VPVS == 1)THEN
   maxlim(1:3) = (/ hmx,   dVs,  dVpVs/)
 ELSEIF(I_VPVS == 0)THEN
   !! Sample Vs and VpVs ratio
-  minlim(1:2) = (/ hmin, 1500/)
-  maxlim(1:2) = (/ hmx,   10000/)
+  minlim(1:2) = (/ hmin, 1500._RP/)
+  maxlim(1:2) = (/ hmx,   10000._RP/)
 ENDIF
 
 
@@ -269,8 +269,8 @@ IF(rank == src)THEN
   WRITE(6,*) 'NKEEP     = ', NKEEP      !! No. models to keep before writing
   WRITE(6,*) 'NPTCHAINS1= ', NPTCHAINS1 !! Chain thinning interval
   WRITE(6,*) 'dTlog     = ', dTlog      !! Temperature increment
-  WRITE(6,*) 'hmx       = ', hmx        !! Max. partition depth
-  WRITE(6,*) 'hmin      = ', hmin       !! Min. layer thickness (must be small enough to not violate detailed balance)
+  WRITE(203,*) 'hmx       = ', hmx        !! Max. partition depth
+  WRITE(203,*) 'hmin      = ', hmin       !! Min. layer thickness (must be small enough to not violate detailed balance)
   WRITE(6,*) 'armxH     = ', armxH      !! Max. AR prediction size
   WRITE(6,*) 'armxV     = ', armxV      !! Max. AR prediction size
   WRITE(6,*) 'TCHCKPT   = ', TCHCKPT    !! Checkpointing interval in s
@@ -278,7 +278,7 @@ IF(rank == src)THEN
   !WRITE(6,*) 'width2    = ', width2     !! time series shift for raysum
   !WRITE(6,*) 'wter level= ', wl         !! water level for ray 3D
   !WRITE(6,*) 'sampling_dt= ', sampling_dt!! time series sampling rate raysum
-  WRITE(6,*) 'NRF1       = ', NRF1      !! No. azimuth bins
+  WRITE(6,*) 'NRF1       = ', 1      !! No. azimuth bins
   WRITE(6,*) 'Sample file: ',samplefile
   WRITE(6,*) ''
   WRITE(6,*) 'minlim:  '

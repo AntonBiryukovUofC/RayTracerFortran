@@ -26,8 +26,8 @@ call MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION, dextent, ierr)
 blockcounts = (/ 1,  NLMX*NPL, NLMX*NPL , (NLMX+1)*NPL*NPL,  NPL*NLMX,   NPL*NLMX,&
 !!               sdparRT   sdaveRT
                  NMODE,    NMODE,&
-!!               arparRT idxarRT  gvoroidx nunique NFP
-                 NMODE,   NMODE,     NPL-1,     1,    1, & 
+!!               arpar arparRT idxar idxarRT  gvoroidx nunique NFP
+                 NMODE, NMODE,  NMODE,  NMODE,     NPL-1,     1,    1, & 
 !!               beta    logL     logPr tcmp  ireject_bd  iaccept_bd ireject_bds  iaccept_bds 
                   1,       1,       1,    1,      1,          1,         1,          1,&
 !!               DobsR           DpredR        DobsV       DpredV         DobsT        DpredT
@@ -100,22 +100,17 @@ USE RJMCMC_COM
 IMPLICIT NONE
 TYPE (objstruc) :: obj
 
-ALLOCATE( obj%voro(NLMX,NPL),obj%voroidx(NLMX,NPL),obj%par((NLMX+1)*NPL*NPL) )
+ALLOCATE( obj%voro(NLMX,NPL),obj%voroidx(NLMX,NPL))
+ALLOCATE(obj%par((NLMX+1)*NPL*NPL) )
 ALLOCATE( obj%hiface(NLMX*NPL),obj%ziface(NLMX*NPL) )
-!ALLOCATE( obj%sdparR(NRF1),obj%sdparV(NRF1),obj%sdparT(NRF1),obj%arpar(3*NRF1),obj%idxar(3*NRF1) )
-!ALLOCATE( obj%sdaveH(NRF1),obj%sdaveV(NRF1),obj%sdaveT(NRF1),obj%sdaveRT(NMODE) )
+print *,' yaii'
 ALLOCATE( obj%sdaveRT(NMODE) )
 
-ALLOCATE( obj%sdparRT(NMODE),obj%arparRT(NMODE),obj%idxarRT(NMODE) )
+ALLOCATE( obj%sdparRT(NMODE),obj%arparRT(NMODE),obj%arpar(NMODE))
+ALLOCATE(obj%idxarRT(NMODE),obj%idxar(NMODE) )
 ALLOCATE( obj%gvoroidx(NPL-1) )
-!! R, T, and V seismograms:
-!ALLOCATE( obj%DobsR(NRF1,NTIME2),obj%DpredR(NRF1,NTIME) )
-!ALLOCATE( obj%DobsV(NRF1,NTIME2),obj%DpredV(NRF1,NTIME) )
-!ALLOCATE( obj%DobsT(NRF1,NTIME2),obj%DpredT(NRF1,NTIME) )
-!ALLOCATE( obj%S(NRF1,NSRC) )
-!ALLOCATE( obj%DresR(NRF1,NTIME),obj%DresV(NRF1,NTIME),obj%DresT(NRF1,NTIME) )
-!ALLOCATE( obj%DarR(NRF1,NTIME),obj%DarT(NRF1,NTIME),obj%DarV(NRF1,NTIME) )
 !! RT data:
+
 ALLOCATE( obj%DobsRT(NMODE,NDAT_RT),obj%DpredRT(NMODE,NDAT_RT),obj%DresRT(NMODE,NDAT_RT) )
 !ALLOCATE( obj%DarRT(NMODE,NDAT_RT),obj%periods(NMODE,NDAT_RT) )
 ALLOCATE( obj%DarRT(NMODE,NDAT_RT) )
@@ -125,35 +120,16 @@ obj%voroidx  = 0
 obj%par      = 0._RP
 obj%hiface   = 0._RP
 obj%ziface   = 0._RP
-!obj%sdparR   = 0._RP
-!obj%sdparV   = 0._RP
-!obj%sdparT   = 0._RP
 obj%sdparRT = 0._RP
-!obj%sdaveH   = 0._RP
-!bj%sdaveV   = 0._RP
-!obj%sdaveT   = 0._RP
 obj%sdaveRT = 0._RP
 obj%arpar    = 0._RP
+obj%arparRT    = 0._RP
 obj%idxar    = 0
+obj%idxarRT    = 0
+
 obj%gvoroidx = 0
-!obj%DobsR    = 0._RP
-!obj%DpredR   = 0._RP
-!obj%DobsV    = 0._RP
-!obj%DpredV   = 0._RP
-!obj%DobsT    = 0._RP
-!obj%DpredT   = 0._RP
-!obj%S        = 0._RP
-!obj%DresR    = 0._RP
-!obj%DresV    = 0._RP
-!obj%DresT    = 0._RP
-!obj%DarR     = 0._RP
-!obj%DarV     = 0._RP
-!obj%DarT     = 0._RP
-!obj%DobsRT  = 0._RP
-!obj%DpredRT = 0._RP
-!obj%DresRT  = 0._RP
-!obj%DarRT   = 0._RP
-!obj%periods  = 0._RP
+print *,' yaee'
+
 END SUBROUTINE ALLOC_OBJ
 !=======================================================================
 !EOF

@@ -69,13 +69,13 @@ IF(rank == src)WRITE(6,*) '...running on ',NTHREAD,' cores'
 !! Read parameter file and allocate global prior limits:
 !!
 CALL READPARFILE()
-
+print *,' yaay'
 !! Allocate objects for sampling
 CALL ALLOC_OBJ(objm(1))
 CALL ALLOC_OBJ(objm(2))
 CALL ALLOC_OBJ(obj)
 CALL ALLOC_OBJ(objnew)
-
+print *,' yaay2'
 IF(rank == src)THEN
   !!
   !!  File to save posterior samples
@@ -86,8 +86,8 @@ IF(rank == src)THEN
   ACTION='WRITE')
 ENDIF
 
-ncount1 = NFPMX+NAP+3*NRF1+3*NRF1+2*NMODE
-ncount2 = NFPMX+1+3*NRF1+3*NRF1+2*NMODE
+ncount1 = NFPMX+NAP+3*1+3*1+2*NMODE
+ncount2 = NFPMX+1+3*1+3*1+2*NMODE
 ALLOCATE( sample(NKEEP,ncount1),tmpvoro(NFPMX) )
 ALLOCATE( tmpmap(ncount2) )
 sample       = 0._RP
@@ -175,13 +175,13 @@ ENDDO
 !IF(ICOV == 1) obj%sdparR   = tmpmap(NFPMX+1+1:NFPMX+1+NRF1)
 !IF(ICOV == 1) obj%sdparV   = tmpmap(NFPMX+1+1+NRF1:NFPMX+1+2*NRF1)
 !IF(ICOV == 1) obj%sdparT   = tmpmap(NFPMX+1+1+2*NRF1:NFPMX+1+3*NRF1)
-IF(ICOV == 1) obj%sdparRT = tmpmap(NFPMX+1+1+3*NRF1:NFPMX+1+3*NRF1+NMODE)
+IF(ICOV == 1) obj%sdparRT = tmpmap(NFPMX+1+1+3*1:NFPMX+1+3*1+NMODE)
 
 IF(IAR == 1)THEN
-  obj%arpar = tmpmap(NFPMX+1+3*NRF1+NMODE+1:NFPMX+3*NRF1+NMODE+3*NRF1+1)
-  obj%arparRT = tmpmap(NFPMX+1+3*NRF1+NMODE+3*NRF1+1:NFPMX+3*NRF1+NMODE+3*NRF1+NMODE+1)
+  obj%arpar = tmpmap(NFPMX+1+3*1+NMODE+1:NFPMX+3*1+NMODE+3*1+1)
+  obj%arparRT = tmpmap(NFPMX+1+3*1+NMODE+3*1+1:NFPMX+3*1+NMODE+3*1+NMODE+1)
   obj%idxar = 1
-  DO ipar = 1,NRF1
+  DO ipar = 1,1
     IF(obj%arpar(ipar) < minlimar(ipar)) obj%idxar(ipar) = 0
   ENDDO
   obj%idxarRT = 1

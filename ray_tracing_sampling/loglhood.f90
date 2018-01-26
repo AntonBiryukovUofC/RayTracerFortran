@@ -44,8 +44,8 @@ IMPLICIT NONE
 
 INTEGER(KIND=IB)                      :: ipred,ierr_rt,imod,ibadlogL,ilay
 TYPE (objstruc)                       :: obj
-REAL(KIND=SP),DIMENSION(maxlay,10)    :: curmod
-REAL(KIND=SP),DIMENSION(maxlay+NPREM,10):: curmod2
+REAL(KIND=SP),DIMENSION(10,10)    :: curmod
+REAL(KIND=SP),DIMENSION(10+NPREM,10):: curmod2
 REAL(KIND=RP),DIMENSION(NDAT_RT)     :: DpredRT
 REAL(KIND=RP),DIMENSION(NMODE)        :: EtmpRT
 REAL(KIND=RP)                         :: logL,factvs,factvpvs
@@ -331,11 +331,11 @@ REAL(KIND=DRP),DIMENSION(NLMX*NPL):: tmpsort2
 !obj%voroidx(2,:) = (/ 1, 1, 0/)
 !obj%voroidx(3,:) = (/ 1, 1, 0/)
 
-IF(IDIP == 1)THEN
-  NPL_tmp = NPL-1
-ELSE
-  NPL_tmp = NPL
-ENDIF
+!IF(IDIP == 1)THEN
+!  NPL_tmp = NPL-1
+!ELSE
+!  NPL_tmp = NPL
+!ENDIF
 
 tmpsort = 0._DRP
 tmpsort = REAL(obj%voro(1:obj%k,:),DRP)
@@ -453,18 +453,18 @@ DO ipar = 2,NPL_tmp
   ENDIF
 ENDDO
 partmp(1:obj%nunique,1) = obj%hiface(1:obj%nunique)
-IF(IDIP == 1)THEN
-  ipar = NPL
-  ivo = 1
-  partmp(:,ipar) = 0._RP
-  IF(SUM(voroidx(:,ipar)) > 0)THEN
-    DO ilay = 2,obj%nunique+1
-      IF(voroidx(ilay,ipar) == 1)THEN
-        partmp(ilay,ipar) = voro(ilay,ipar)
-      ENDIF
-    ENDDO
-  ENDIF
-ENDIF
+!IF(IDIP == 1)THEN
+!  ipar = NPL
+!  ivo = 1
+!  partmp(:,ipar) = 0._RP
+!  IF(SUM(voroidx(:,ipar)) > 0)THEN
+!    DO ilay = 2,obj%nunique+1
+!      IF(voroidx(ilay,ipar) == 1)THEN
+!        partmp(ilay,ipar) = voro(ilay,ipar)
+!      ENDIF
+!    ENDDO
+!  ENDIF
+!ENDIF
 
 obj%par = 0._RP
 DO ilay = 1,obj%nunique
