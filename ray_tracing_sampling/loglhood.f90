@@ -84,11 +84,11 @@ DO ilay=obj%k,1,-1
   ENDIF
 ENDDO
 
-curmod2  = 0.
-curmod2(1:obj%nunique+1,:) = curmod(1:obj%nunique+1,:)
+!curmod2  = 0.
+!curmod2(1:obj%nunique+1,:) = curmod(1:obj%nunique+1,:)
 !! last layer thickness
 !curmod2(obj%nunique+1,1)   = (vel_prem(1,1)*1000.)-obj%par((obj%nunique-1)*NPL+1)*1000.
-curmod2(obj%nunique+1,1)   = (vel_prem(1,1)*1000.)-obj%voro(obj%k,1)*1000.
+!curmod2(obj%nunique+1,1)   = (vel_prem(1,1)*1000.)-obj%voro(obj%k,1)*1000.
 
 !PRINT*,'obj voro'
 !DO ilay=1,obj%k+1
@@ -103,13 +103,13 @@ curmod2(obj%nunique+1,1)   = (vel_prem(1,1)*1000.)-obj%voro(obj%k,1)*1000.
 !curmod2(obj%nunique+2:obj%nunique+1+NPREM,4) = (vel_prem(2,1:NPREM) + factvs) * 1000. !! Vs
 !curmod2(obj%nunique+2:obj%nunique+1+NPREM,3) = (vel_prem(2,1:NPREM)+factvs)*(vel_prem(3,1:NPREM)+factvpvs)*1000. !! Vp
 
-IF(IMAP == 1)THEN
-  WRITE(*,*) 'curmod2 (including PREM)'
-  DO ilay=1,obj%nunique+1+NPREM+1
-    WRITE(*,206)ilay,curmod2(ilay,1:10)
-  ENDDO
-  !206   FORMAT(I3,10F12.4)
-ENDIF
+!IF(IMAP == 1)THEN
+!  WRITE(*,*) 'curmod2 (including PREM)'
+!  DO ilay=1,obj%nunique+1+NPREM+1
+!    WRITE(*,206)ilay,curmod2(ilay,1:10)
+!  ENDDO
+!  !206   FORMAT(I3,10F12.4)
+!ENDIF
 
 !periods = REAL(obj%periods(1,1:NDAT_RT),SP)
 !!
@@ -123,8 +123,8 @@ ENDIF
 
 vels = obj%voro(1:(obj%k+1),2) ! Retrieve P-wave velocities here (alphas)
 thickness = obj%hiface(1:obj%k) ! Retrieve Layer thicknesses
-
-
+print *,'About to calc LL'
+print *,obj%k
 CALL TraceRays(vels,thickness,obj%k,src_offset,src_depth,NSRC,DpredRT,1)
 
 

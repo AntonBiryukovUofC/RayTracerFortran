@@ -34,8 +34,8 @@ blockcounts = (/ 1,  NLMX*NPL, NLMX*NPL , (NLMX+1)*NPL*NPL,  NPL*NLMX,   NPL*NLM
                 ! NRF1*NTIME2,   NRF1*NTIME,  NRF1*NTIME2,  NRF1*NTIME,  NRF1*NTIME2,  NRF1*NTIME, &
 !!                S            DresR         DresV        DresT        DarR        DarV        DarT
                 ! NRF1*NSRC, NRF1*NTIME,   NRF1*NTIME,  NRF1*NTIME,  NRF1*NTIME,  NRF1*NTIME,  NRF1*NTIME, &
-!!                DobsRT           DpredRT        DresRT       DarRT           periods
-                 NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT /)
+!!                DobsRT           DpredRT        DresRT       DarRT      
+                 NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT/)
 
 
 !! Oldtypes

@@ -75,7 +75,6 @@ CALL ALLOC_OBJ(objm(1))
 CALL ALLOC_OBJ(objm(2))
 CALL ALLOC_OBJ(obj)
 CALL ALLOC_OBJ(objnew)
-print *,' yaay2'
 IF(rank == src)THEN
   !!
   !!  File to save posterior samples
@@ -85,17 +84,21 @@ IF(rank == src)THEN
   OPEN(NEWUNIT(ustep),FILE=stepsizefile,FORM='formatted',STATUS='REPLACE', &
   ACTION='WRITE')
 ENDIF
-
 ncount1 = NFPMX+NAP+3*1+3*1+2*NMODE
 ncount2 = NFPMX+1+3*1+3*1+2*NMODE
 ALLOCATE( sample(NKEEP,ncount1),tmpvoro(NFPMX) )
 ALLOCATE( tmpmap(ncount2) )
 sample       = 0._RP
 
-!!
+!!print *, "blya"
+
 !!  Make MPI structure to match objstruc
 !!
+
+print *, "blya"
+
 CALL MAKE_MPI_STRUC_SP(objm(1),objtype1)
+print *, "blya!"
 CALL MAKE_MPI_STRUC_SP(objm(2),objtype2)
 CALL MAKE_MPI_STRUC_SP(obj,objtype3)
 
@@ -146,9 +149,9 @@ CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
 !!
 !! Read mapfile to start:
 !!
-OPEN(UNIT=20,FILE=mapfile,FORM='formatted',STATUS='OLD',ACTION='READ')
-READ(20,*) tmpmap
-CLOSE(20)
+!OPEN(UNIT=20,FILE=mapfile,FORM='formatted',STATUS='OLD',ACTION='READ')
+!READ(20,*) tmpmap
+!CLOSE(20)
 
 obj%k       = INT(tmpmap(1),IB)   !! No. interfaces + 1 (e.g. 3 makes 2 layers and a half space)
 obj%NFP     = (obj%k * NPL)       !! No. forward parameters; NPL -> max No. parameters per layer

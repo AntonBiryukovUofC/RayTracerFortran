@@ -201,7 +201,7 @@ MODULE RJMCMC_COM
 !!
   INTEGER :: imcmc1 = 1   !! Counter for models at T=1 (needs to survive checkpointing!)
   INTEGER :: imcmc2 = 1   !! Counter for mcmc steps to scale diminishing adaptation (needs to survive checkpointing!)
-  INTEGER :: NFIELD = 26  !! The number of fields in objstruc
+  INTEGER :: NFIELD = 27  !! The number of fields in objstruc
   INTEGER :: objtype1     !! Name of objtype for MPI sending
   INTEGER :: objtype2     !! Name of objtype for MPI sending
   INTEGER :: objtype3     !! Name of objtype for MPI sending
