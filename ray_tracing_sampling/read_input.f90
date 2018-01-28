@@ -97,7 +97,7 @@ infileRT      = filebase(1:filebaselen) // '_RT.txt'
 infileref      = filebase(1:filebaselen) // '_vel_ref.txt'
 logfile        = filebase(1:filebaselen) // '_RJMH.log'
 seedfile       = filebase(1:filebaselen) // '_seeds.log'
-!mapfile        = filebase(1:filebaselen) // '_map_voro.dat'
+mapfile        = filebase(1:filebaselen) // '_map.dat'
 arfile         = filebase(1:filebaselen) // '_ar.dat'
 !predfile       = filebase(1:filebaselen) // '_mappred.dat'
 !obsfile        = filebase(1:filebaselen) // '_obs.dat'
@@ -261,6 +261,8 @@ IF(rank == src)THEN
   WRITE(6,*) 'ISMPPRIOR = ', ISMPPRIOR
   WRITE(6,*) 'ISETSEED  = ', ISETSEED
   WRITE(6,*) 'IEXCHANGE = ', IEXCHANGE
+  WRITE(6,*) 'I_VREF = ', I_VREF
+
   !WRITE(6,*) 'NTIME     = ', NTIME      !! No. time samples
   WRITE(6,*) 'NSRC      = ', NSRC       !! No. of rays (sources)
   WRITE(6,*) 'NLMN      = ', NLMN       !! Max number of layers
@@ -433,7 +435,7 @@ IF(ICOV == 1)THEN
    !WRITE(6,206) 'sigma H   = ',obj%sdparR
    !WRITE(6,206) 'sigma V   = ',obj%sdparV
    !WRITE(6,206) 'sigma T   = ',obj%sdparT
-   WRITE(6,206) 'sigma SWD = ',obj%sdparRT
+   WRITE(6,206) 'sigma RT = ',obj%sdparRT
 ENDIF
 IF(IAR == 1)THEN
    WRITE(6,*) 'AR parameters:'

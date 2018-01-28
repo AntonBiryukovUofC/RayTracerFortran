@@ -26,12 +26,15 @@ src.df <- read.csv('/home/geoanton/RayTracerFortran/RayTracer/eqdf.csv',header=T
 srcd <- src.df$z
 srco <- sqrt(src.df$x**2+src.df$y**2)
 NSrc <- length(srcd)
+src.to.write <- tibble(offset = srco,depth=srcd)
+
 ```
 
 or randomly..:
 
 ```{r}
-NSrc <- 10
+NSrc <- 4
+set.seed(10)
 src.df <- tibble(z=runif(NSrc,min=200,max=6500),x=runif(NSrc,min=200,max=4500),y=runif(NSrc,min=200,max=4500))
 srcd <- src.df$z
 srco <- sqrt(src.df$x**2+src.df$y**2)
@@ -43,9 +46,10 @@ src.to.write <- tibble(offset = srco,depth=srcd)
 Simple three-layered model here:
 
 ```{r}
-v <- c(3100,4270,6000)
-d <- c(2000, 4000)
+v <- c(3001,5000,3000)
+d <- c(2000, 4000) # That's not thicknesses, that's depth to interfaces !
 NLayers <- length(d)
+
 
 ```
 
@@ -57,6 +61,8 @@ timeP <- rep(0,NSrc)
 timeP <- .Fortran("dff" ,vels=as.numeric(v),depths=as.numeric(d),NLayers=as.integer(NLayers),
                   src_offset=as.numeric(srco),src_depth=as.numeric(srcd),NSrc=as.integer(NSrc),
                   timeP = as.numeric(timeP),keep_delta=as.integer(kd))
+print(timeP$timeP)
+
 ```
 
 and save its results:
@@ -64,17 +70,17 @@ and save its results:
 #
 # Save the travel times into a one column file:
 #
-write.table(tibble(t=timeP$timeP),file = sprintf('%s_RT.txt',base.name),sep = ' ',row.names = F,col.names = F)
+write.table(tibble(t=timeP$timeP),file = sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_RT.txt',base.name),sep = ' ',row.names = F,col.names = F)
 #
 # Save the source offsets and depths
 #
-write.table(src.to.write,file = sprintf('%s_src_data.txt',base.name),sep = ' ',row.names = F,col.names = F)
+write.table(src.to.write,file = sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_src_data.txt',base.name),sep = ' ',row.names = F,col.names = F)
 
 ```
 
 ## Check the ray results if debugging was switched on
 ```{r fig.height=10, fig.width=10}
-read.rays <- function(file = "rays.dat",nrays=1)
+read.rays <- function(file = "rays.dat",nrays=1,timeP= NA)
 {
   ind.delta <- 2*seq(nrays)-1
   df <- tibble()
@@ -83,15 +89,16 @@ read.rays <- function(file = "rays.dat",nrays=1)
     delta <- c(0,scan(file,skip = ind.delta[i]-1,nlines = 1))
     depth <- c(0,scan(file,skip = ind.delta[i],nlines = 1))
     ray <- i
-    df <- bind_rows(df,tibble(delta=delta,depth=depth,ray=ray))
+    df <- bind_rows(df,tibble(delta=delta,depth=depth,ray=ray,ray.label = timeP[i]))
   }
   df <- df %>% group_by(ray) %>% mutate(depth.cum = cumsum(depth), delta.cum = cumsum(delta) )
   return(df)
 }
-rays.df <- read.rays(nrays=NSrc)
-p <- ggplot(data=rays.df,aes(x=delta.cum,y=depth.cum,col = factor(ray))) + geom_line() + scale_y_reverse()+geom_point()+geom_hline(yintercept = c(0,d),linetype=2)
+rays.df <- read.rays(nrays=NSrc,timeP = timeP$timeP)
+p <- ggplot(data=rays.df,aes(x=delta.cum,y=depth.cum,label = ray.label,col = factor(ray))) + geom_line() + scale_y_reverse()+geom_point()+geom_hline(yintercept = c(0,d),linetype=2)+geom_label()
 ggsave(p,filename = './pngs/ray_example.png',width = 7,height = 4)
 print(p)
+print(timeP$timeP)
 ```
 
 

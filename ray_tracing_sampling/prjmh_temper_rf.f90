@@ -95,10 +95,8 @@ sample       = 0._RP
 !!  Make MPI structure to match objstruc
 !!
 
-print *, "blya"
 
 CALL MAKE_MPI_STRUC_SP(objm(1),objtype1)
-print *, "blya!"
 CALL MAKE_MPI_STRUC_SP(objm(2),objtype2)
 CALL MAKE_MPI_STRUC_SP(obj,objtype3)
 
@@ -149,12 +147,11 @@ CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
 !!
 !! Read mapfile to start:
 !!
-!OPEN(UNIT=20,FILE=mapfile,FORM='formatted',STATUS='OLD',ACTION='READ')
-!READ(20,*) tmpmap
-!CLOSE(20)
+OPEN(UNIT=20,FILE=mapfile,FORM='formatted',STATUS='OLD',ACTION='READ')
+READ(20,*) tmpmap
+CLOSE(20)
 
-!obj%k       = INT(tmpmap(1),IB)   !! No. interfaces + 1 (e.g. 3 makes 2 layers and a half space)
-obj%k = 2
+obj%k       = INT(tmpmap(1),IB)   !! No. interfaces + 1 (e.g. 3 makes 2 layers and a half space)
 obj%NFP     = (obj%k * NPL)       !! No. forward parameters; NPL -> max No. parameters per layer
 obj%voro    = 0._RP               !! Main array of layer nodes
 obj%voroidx = 0
@@ -179,9 +176,9 @@ ENDDO
 !IF(ICOV == 1) obj%sdparR   = tmpmap(NFPMX+1+1:NFPMX+1+NRF1)
 !IF(ICOV == 1) obj%sdparV   = tmpmap(NFPMX+1+1+NRF1:NFPMX+1+2*NRF1)
 !IF(ICOV == 1) obj%sdparT   = tmpmap(NFPMX+1+1+2*NRF1:NFPMX+1+3*NRF1)
-IF(ICOV == 1) obj%sdparRT = tmpmap(NFPMX+1+1+3*1:NFPMX+1+3*1+NMODE)
+IF(ICOV == 1) obj%sdparRT = tmpmap(NFPMX+1+1:NFPMX+1+NMODE)
 
-IF(IAR == 1)THEN
+IF(IAR == 1)THEN ! These indices are totally wrong!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   obj%arpar = tmpmap(NFPMX+1+3*1+NMODE+1:NFPMX+3*1+NMODE+3*1+1)
   obj%arparRT = tmpmap(NFPMX+1+3*1+NMODE+3*1+1:NFPMX+3*1+NMODE+3*1+NMODE+1)
   obj%idxar = 1
@@ -194,9 +191,11 @@ IF(IAR == 1)THEN
   ENDDO
 ENDIF
 
+
 IF(I_VARPAR == 0)CALL INTERPLAYER_novar(obj)
 IF(I_VARPAR == 1)CALL INTERPLAYER(obj)
 IF(rank /= src)obj%beta = beta_pt(rank)
+CALL PRINTPAR(obj)
 
 ALLOCATE( icount(NTHREAD) )
 icount = 0

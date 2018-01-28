@@ -113,7 +113,7 @@ module raymod
         P0_bad=.TRUE.
 
         do while (P0_bad)
-            if (ISNAN(sum(sqrt(1-(p0**2)*vp**2)))) then
+            if (ISNAN(sum(sqrt(1-(p0**2)*(vp+1)**2)))) then
                 p0=p0/2
                ! print *,'p0 divided by 2...'
             else

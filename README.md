@@ -31,6 +31,19 @@ I will populate later this section, after I "clean" this repository. For now, lo
 3. Figure out what INTERPLAYER routine does 
 4. Fix PROPOSAL_SDRT() for ray tracing
 9. in the filebase.txt, first line is string length, second line is the string to be prepended to all filenames.
-10. Fix MPI Alloc with the ojecttypes comparing them against structure definition in `rjmcmc_com`
-11. NRF1 ? replaced with 1
 12. Commented weird lines with partmp at IDIP==1
+13. mapfile : (transpose these rows into a long one row file)
+
+k
+layer1-depth-to-interface
+layer1-vp
+layer2-depth-to-..
+layer2-vp...
+..
+..
+vp  -- for halfspace
+0
+0
+
+The total number of entries is ncount2 (from the main code file)
+14. Set the ierr_rt to zero temporarily!

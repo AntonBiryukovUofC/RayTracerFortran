@@ -50,8 +50,8 @@ REAL(KIND=RP),DIMENSION(NDAT_RT)     :: DpredRT
 REAL(KIND=RP),DIMENSION(NMODE)        :: EtmpRT
 REAL(KIND=RP)                         :: logL,factvs,factvpvs
 REAL(KIND=RP)                         :: tstart, tend, tcmp   ! Overall time 
-REAL(KIND=RP),DIMENSION(obj%k+1)     :: vels
-REAL(KIND=RP),DIMENSION(obj%k)     :: thickness
+REAL(KIND=RP),DIMENSION(obj%k)     :: vels
+REAL(KIND=RP),DIMENSION(obj%k-1)     :: thickness
 
 LOGICAL :: ISNAN
 
@@ -71,18 +71,18 @@ ENDIF
 !! Find lowest valid entry for perturbations
 !factvs   = obj%par(obj%nunique*NPL+1)  !! Vs is in km/s here
 !factvpvs = obj%par(obj%nunique*NPL+2)
-DO ilay=obj%k,1,-1
-  IF(obj%voroidx(ilay,2) == 1)THEN
-    factvs   = obj%voro(ilay,2)  !! Vs is in km/s here
-    EXIT
-  ENDIF
-ENDDO
-DO ilay=obj%k,1,-1
-  IF(obj%voroidx(ilay,3) == 1)THEN
-    factvpvs = obj%voro(ilay,3)
-    EXIT
-  ENDIF
-ENDDO
+!DO ilay=obj%k,1,-1
+!  IF(obj%voroidx(ilay,2) == 1)THEN
+!    factvs   = obj%voro(ilay,2)  !! Vs is in km/s here
+!    EXIT
+!  ENDIF
+!ENDDO
+!DO ilay=obj%k,1,-1
+!  IF(obj%voroidx(ilay,3) == 1)THEN
+!    factvpvs = obj%voro(ilay,3)
+!    EXIT
+!  ENDIF
+!ENDDO
 
 !curmod2  = 0.
 !curmod2(1:obj%nunique+1,:) = curmod(1:obj%nunique+1,:)
@@ -120,17 +120,19 @@ ENDDO
 !     curmod2(1:obj%nunique+1+NPREM,3)/1000.,curmod2(1:obj%nunique+1+NPREM,4)/1000.,&
 !     curmod2(1:obj%nunique+1+NPREM,1)/1000.,DpredRT,&
 !     periods,NDAT_RT,ierr_rt)
-
-vels = obj%voro(1:(obj%k+1),2) ! Retrieve P-wave velocities here (alphas)
-thickness = obj%hiface(1:obj%k) ! Retrieve Layer thicknesses
-print *,'About to calc LL'
-print *,'obj%k = ',obj%k
+DpredRT=0
+vels = obj%voro(1:(obj%k),2) ! Retrieve P-wave velocities here (alphas)
+thickness = obj%ziface(1:(obj%k-1)) ! Retrieve Layer thicknesses
+!print *,'About to calc LL'
+!print *,'obj%k = ',obj%k
 print *,'vels =',vels
 print *,'thickness =',thickness
-
-CALL TraceRays(vels,thickness,obj%k,src_offset,src_depth,NSRC,DpredRT,1)
+print *, ' src_offsets = ',src_offset
+print *, ' src_depths = ',src_depth
+CALL TraceRays(vels,thickness,obj%k-1,src_offset,src_depth,NSRC,DpredRT,1)
 
 print *,'timesP =',DpredRT
+ierr_rt=0 ! Temporarily here ~~~~~~~~~~~~~~~~~~~~~~~~~
 IF(ierr_rt /= 0)THEN
   logL = -HUGE(1._RP)
   RETURN
@@ -138,6 +140,8 @@ ENDIF
 
 obj%DpredRT(1,1:NDAT_RT) = REAL(DpredRT,RP)
 obj%DresRT(1,1:NDAT_RT) = obj%DobsRT(1,1:NDAT_RT)-obj%DpredRT(1,1:NDAT_RT)
+
+print *, obj%DresRT
 
 ibadlogL = 0
 IF(IAR == 1)THEN
@@ -241,7 +245,7 @@ ENDDO
 
 partmp = 0._RP
 partmp(1:obj%k,1) = obj%ziface(1:obj%k)
-!partmp(1:obj%k,2:NPL) = obj%voro(1:obj%k,2:NPL)
+partmp(1:obj%k,2:NPL) = obj%voro(1:obj%k,2:NPL)
 
 !!
 !! Apply reference profile:
