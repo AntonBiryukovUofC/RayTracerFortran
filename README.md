@@ -26,8 +26,6 @@ I will populate later this section, after I "clean" this repository. For now, lo
 # TODO:
 
 ## Parallel tempering Fortran codes:
-1. READPARFILE() needs adapting for Ray Tracer (RT)
-2. READDATA() needs adapting for Ray Tracer travel times 
 3. Figure out what INTERPLAYER routine does 
 4. Fix PROPOSAL_SDRT() for ray tracing
 9. in the filebase.txt, first line is string length, second line is the string to be prepended to all filenames.
@@ -47,3 +45,6 @@ vp  -- for halfspace
 
 The total number of entries is ncount2 (from the main code file)
 14. Set the ierr_rt to zero temporarily!
+15. Exchange does not seem to work properly
+16. Need to figure out the size of sample (columns on sample file - there are too many for some reason)
+17. Sampling has a lot of zeroes in SdRt, otherwise looks close to uniform !

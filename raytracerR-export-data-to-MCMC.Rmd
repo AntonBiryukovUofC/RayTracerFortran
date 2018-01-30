@@ -14,6 +14,7 @@ This notebook is used for developing the function for saving the data in the app
 setwd('/home/geoanton/RayTracerFortran/RayTracer/')
 library(dplyr)
 library(ggplot2)
+library(reshape2)
 dyn.load("./subroutineR-quiet.so")
 base.name <- 'test_1'
 ```
@@ -27,6 +28,7 @@ srcd <- src.df$z
 srco <- sqrt(src.df$x**2+src.df$y**2)
 NSrc <- length(srcd)
 src.to.write <- tibble(offset = srco,depth=srcd)
+print(src.to.write)
 
 ```
 
@@ -49,7 +51,7 @@ Simple three-layered model here:
 v <- c(3001,5000,3000)
 d <- c(2000, 4000) # That's not thicknesses, that's depth to interfaces !
 NLayers <- length(d)
-
+NLayersMax <- 10
 
 ```
 
@@ -89,7 +91,7 @@ read.rays <- function(file = "rays.dat",nrays=1,timeP= NA)
     delta <- c(0,scan(file,skip = ind.delta[i]-1,nlines = 1))
     depth <- c(0,scan(file,skip = ind.delta[i],nlines = 1))
     ray <- i
-    df <- bind_rows(df,tibble(delta=delta,depth=depth,ray=ray,ray.label = timeP[i]))
+    df <- bind_rows(df,tibble(delta=delta,depth=depth,ray=ray,ray.label = round(timeP[i],digits=4)  ))
   }
   df <- df %>% group_by(ray) %>% mutate(depth.cum = cumsum(depth), delta.cum = cumsum(delta) )
   return(df)
@@ -100,6 +102,46 @@ ggsave(p,filename = './pngs/ray_example.png',width = 7,height = 4)
 print(p)
 print(timeP$timeP)
 ```
+
+## Plot the sampling from the voro_sample file
+
+We need to follow the notation given in prmjh_temper.f90 and read in the numbers accordingly :
+
+`sample(ikeep,:) =  (/ objm(ic)%logL, objm(ic)%logPr, objm(ic)%tcmp, REAL(objm(ic)%k,RP), & ! 4 parameters
+                           tmpvoro,objm(ic)%sdparRT,objm(ic)%arpar,objm(ic)%arparRT, &
+                           REAL(iaccept,RP)/REAL(iaccept+ireject,RP),REAL(objm(ic)%iaccept_bd,RP),&
+                           REAL(objm(ic)%ireject_bd,RP),REAL(objm(ic)%iaccept_bds,RP),REAL(ic,RP),REAL(rank,RP) /)`
+                           
+                  
+Here we setup the names of the columns, as well as read the file with the sample table:
+
+```{r}
+col.names <- c('LogL','LogPrior','tcmp','k')
+k <- NLayers+1 # by convention of Jan's RJMCMC
+NParamPerLayer <- 2
+NVoro <- NLayersMax*NParamPerLayer
+col.names.voro <- rep(NA,NVoro)
+# Make Voro Column names - this will be my velocity profiles
+col.names.voro[seq(1,NVoro-1,by=2)] <- paste0(('Z'),seq(NVoro/2))
+col.names.voro[seq(2,NVoro,by=2)] <- paste0(('V'),seq(NVoro/2))
+after.voro.names <- c('SdRT','ArPar','ArParRT','acc_ratio','iacc_bd','irej_bd','iacc_bds','ic','rank')
+all.names <- c(col.names,col.names.voro,after.voro.names)
+
+filename <- '~/RayTracerFortran/RayTracer/test_1/test_1_voro_sample.txt'
+chain.df <- read.table(filename) %>% tbl_df() %>% mutate(iter = row_number())
+colnames(chain.df)[1:length(all.names)] <- all.names 
+```
+
+In order to look at the distributions for each parameter, we need to melt the table:
+
+```{r fig.height=10, fig.width=10}
+var.to.keep <- c(col.names.voro,'SdRT')
+chain.melted <- melt(chain.df,id.vars = 'iter') %>% filter(variable %in% var.to.keep) %>% tbl_df() %>% mutate(value = as.numeric(value)) 
+ggplot(data = chain.melted,aes(x=value,group = variable)) + geom_histogram(bins=100) + facet_wrap(~variable,scales = 'free')
+```
+
+
+
 
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
