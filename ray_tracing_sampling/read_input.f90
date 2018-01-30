@@ -46,19 +46,13 @@ READ(20,*) dTlog      !! Temperature increment
 READ(20,*) lambda     !! Lambda for Poisson prior on k
 READ(20,*) hmx        !! Max. partition depth
 READ(20,*) hmin       !! Min. layer thickness (must be small enough to not violate detailed balance)
-print *,'1st'
 READ(20,*) TCHCKPT    !! Checkpointing interval in s
 READ(20,*) dVs        !! Vs one sided prior width (relative to background model)
 READ(20,*) dVpVs      !! VpVs ratio one sided prior width
-print *,'2ndd'
 READ(20,*) sdmn       !! data (residual) error standard deviation prior lower limit
-print *,'HI'
 READ(20,*) sdmx       !! data (residual) error standard deviation prior upper limit
-print *,'3rdd'
 READ(20,*) VpVsmin   !! minimum VpVs ratio
-print *,'4th'
 READ(20,*) VpVsmax   !! maximum VpVs ratio
-print *,'Done!'
 
 CLOSE(20)
 

@@ -186,9 +186,11 @@ MODULE RJMCMC_COM
 !!
 !! RJMCMC parameters
 !!
-   INTEGER(KIND=IB),PARAMETER    :: NCHAIN     = 1E9_IB  ! # iterations (max # MCMC steps)
-   INTEGER(KIND=IB)              :: ICHAINTHIN = 1E0_IB  ! Chain thinning interval
+   INTEGER(KIND=IB),PARAMETER    :: NCHAIN     = 1E5_IB  ! # iterations (max # MCMC steps)
+   INTEGER(KIND=IB)              :: ICHAINTHIN = 5E0_IB  ! Chain thinning interval
+   !INTEGER(KIND=IB)              :: NKEEP      = 1E1_IB  ! Number models to keep before writing
    INTEGER(KIND=IB)              :: NKEEP      = 1E1_IB  ! Number models to keep before writing
+   
    INTEGER(KIND=IB),PARAMETER    :: NAP        = 10      ! Misc parameters in sample (for bookeeping)
    INTEGER(KIND=IB),PARAMETER    :: NDM        = 100     ! No. steps in lin rot est
    INTEGER(KIND=IB)          :: TCHCKPT              !! No. seconds (integer value) between checkpoints

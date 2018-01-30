@@ -69,7 +69,6 @@ IF(rank == src)WRITE(6,*) '...running on ',NTHREAD,' cores'
 !! Read parameter file and allocate global prior limits:
 !!
 CALL READPARFILE()
-print *,' yaay'
 !! Allocate objects for sampling
 CALL ALLOC_OBJ(objm(1))
 CALL ALLOC_OBJ(objm(2))
@@ -94,6 +93,9 @@ sample       = 0._RP
 
 !!  Make MPI structure to match objstruc
 !!
+! Specify NCHAIN number here:
+
+
 
 
 CALL MAKE_MPI_STRUC_SP(objm(1),objtype1)
@@ -254,9 +256,11 @@ IF(IMAP == 1)THEN
   ENDIF
   CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
   CALL MPI_FINALIZE( ierr )
+  print *,' Hello World1, IMAP STOP'
+
   STOP
 ELSE
-  IF(rank == 1)THEN
+  IF(rank == 1) THEN ! changed rank == 1 to rank == src
     WRITE(6,*) 'Starting model:'
     CALL PRINTPAR(obj)
     CALL CHECKBOUNDS(obj)
@@ -276,6 +280,9 @@ ELSE
     WRITE(6,*) 'time for linrot = ',tend2-tstart2
   ENDIF
 ENDIF
+
+print *,' Hello World2'
+
 CALL FLUSH(6)
 CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
 !!
@@ -306,22 +313,33 @@ ncswapprop = 0
 ikeep = 1
 tsave1 = MPI_WTIME()
 DO imcmc = 1,NCHAIN
-
+  print *, 'imcmc1'
   !!
   !!  Receiving samples from any two slave (no particular order -> auto load
   !!  balancing) and propose swap:
   !!
   DO ithin = 1,ICHAINTHIN
+    print *, 'imcmc2'
+
     CALL MPI_RECV(objm(1), 1, objtype1, MPI_ANY_SOURCE,MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr )
     isource1 = status(MPI_SOURCE)  !! This saves the slave id for the following communication
     tstart = MPI_WTIME()
+    print *, 'imcmc3'
+
     CALL MPI_RECV(objm(2), 1, objtype2, MPI_ANY_SOURCE,MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr )
     isource2 = status(MPI_SOURCE)  !! This saves the slave id for the following communication
-    IF(IEXCHANGE == 1)CALL TEMPSWP_MH(objm(1),objm(2))
+    print *, 'imcmc4'
+
+    IF(IEXCHANGE == 1) THEN
+      CALL TEMPSWP_MH(objm(1),objm(2))
     !IF(IAR == 1)CALL UDATE_SDAVE(objm(1),objm(2))
+    print *, 'imcmc5'
+    ENDIF
     CALL MPI_SEND(objm(1), 1,objtype1, isource1, rank, MPI_COMM_WORLD, ierr)
     CALL MPI_SEND(objm(2), 1,objtype2, isource2, rank, MPI_COMM_WORLD, ierr)
     tend = MPI_WTIME()
+    print *, 'imcmc6'
+
   ENDDO
 
 !  t_chckpt2 = MPI_WTIME()
@@ -332,6 +350,7 @@ DO imcmc = 1,NCHAIN
 !    CALL SAVEOBJECT(obj)
 !    t_chckpt1 = MPI_WTIME()
 !  ENDIF
+
   CALL SAVESAMPLE(objm,ikeep,isource1,isource2,REAL(tend-tstart,RP))
 
 !   tstartsnd = MPI_WTIME()
@@ -359,29 +378,33 @@ ENDDO
 !!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!
 !!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!
 ELSE
+
 tstart = MPI_WTIME()
+
 DO imcmc = 1,NCHAIN
 
   !!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!
-  !!  EXPLORE CALLS
-
+  !!                      EXPLORE CALLS
+  print *,'slave1'
   DO ithin = 1,1
     !! BD MH for fixed complexity:
-    IF(I_VARPAR == 0)CALL EXPLORE_MH_NOVARPAR(obj,objnew,obj%beta)
+    IF (I_VARPAR == 0) CALL EXPLORE_MH_NOVARPAR(obj,objnew,obj%beta)
 
     !! BD MH for variable complexity:
-    IF(I_VARPAR == 1)CALL EXPLORE_MH_VARPAR(obj,objnew,obj%beta)
+    IF (I_VARPAR == 1) CALL EXPLORE_MH_VARPAR(obj,objnew,obj%beta)
+
+print *,'slave2'
   ENDDO
   !! MH for non partition parameters:
   CALL EXPLORE_MH(obj,objnew,obj%beta)
-
-  !!  END EXPLORE CALLS
+print *,'slave3'
+  !!                    END EXPLORE CALLS                                    !!
   !!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!
 
   tend = MPI_WTIME()
   obj%tcmp = REAL(tend-tstart,RP)
   CALL MPI_SEND(obj, 1,objtype3, src, rank, MPI_COMM_WORLD, ierr)
-  CALL MPI_RECV(obj, 1,objtype3, src, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr )
+  CALL MPI_RECV(obj, 1,objtype3, src, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
   tstart = MPI_WTIME()
 
 !  t_chckpt2 = MPI_WTIME()
@@ -1742,7 +1765,7 @@ REAL(KIND=RP),DIMENSION(NFPMX)   :: tmpvoro  ! Temporary Voronoi cell array for 
 !INTEGER(KIND=RP),DIMENSION(NFPMX):: tmpprop,tmpacc
 REAL(KIND=RP),DIMENSION(NPL)     :: tmp  ! Temporary Voronoi cell array for saving
 REAL(KIND=RP) :: tmaster
-
+print *, ' Attempting to save a sample '
 !!
 !! Save object into global sample array
 !!
@@ -1781,7 +1804,7 @@ DO ic = 1,2
 !                          objm(ic)%arpar,objm(ic)%sdpar,&
 !                          REAL(tmpacc,RP)/REAL(tmpprop,RP),REAL(objm(ic)%iaccept_bd,RP),&
 !                          REAL(objm(ic)%ipropose_bd,RP),REAL(i_bd,RP),objm(ic)%tcmp,REAL(isource,RP) /)
-
+    print *, 'Filling sample array'
      sample(ikeep,:) =  (/ objm(ic)%logL, objm(ic)%logPr, objm(ic)%tcmp, REAL(objm(ic)%k,RP), & ! 4 parameters
                            tmpvoro,objm(ic)%sdparRT,objm(ic)%arpar,objm(ic)%arparRT, &
                            REAL(iaccept,RP)/REAL(iaccept+ireject,RP),REAL(objm(ic)%iaccept_bd,RP),&
@@ -1798,6 +1821,8 @@ DO ic = 1,2
     !!
     IF(ikeep > NKEEP)THEN
       DO jidx=1,NKEEP
+        print *, 'Trying to write into the file!'
+
         WRITE(usample,207) sample(jidx,:)
       ENDDO
       CALL FLUSH(usample)
@@ -1808,6 +1833,8 @@ DO ic = 1,2
     ENDIF
   ENDIF
 ENDDO
+print *, ' Savesample end'
+
 CALL FLUSH(6)
 202 FORMAT(A3,I8,1F14.4,I4,I10,I10,I8,1f12.4)
 203 FORMAT(A69)
@@ -1816,6 +1843,8 @@ CALL FLUSH(6)
 214 FORMAT(a23,I6,a9,I4)
 215 FORMAT(a23,F8.4,I4,I4)
 216 FORMAT(a23,F8.2,a)
+
+
 RETURN
 END SUBROUTINE SAVESAMPLE
 

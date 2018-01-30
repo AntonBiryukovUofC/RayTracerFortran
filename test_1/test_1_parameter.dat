@@ -1,4 +1,4 @@
- 1   ! IMAP
+ 0   ! IMAP
  1   ! ICOV
  0   ! ENOS       !! Even numbered order statistic on k (avoids thin layers)
  1   ! IPOIPR     !! Applies Poisson prior on k
@@ -9,9 +9,9 @@
  1   ! I_RT      !! Invert SWD data
  0   ! I_VREF
  0   ! I_VPVS
- 0   ! ISMPPRIOR
+ 1   ! ISMPPRIOR
  0   ! ISETSEED
- 1   ! IEXCHANGE
+ 0   ! IEXCHANGE
  3  ! NDAT_RT   !! No. RT data
  1   ! NMODE      !! No. RT modes (Phases in our case)
  3  ! NSRC       !! No. of raypaths computed 

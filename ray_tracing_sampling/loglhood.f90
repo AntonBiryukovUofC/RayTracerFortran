@@ -22,6 +22,7 @@ ENDIF
 !! Joint likelihood (assumes independent errors on the vasious data sets)
 !!
 obj%logL = logL_RT
+print *,' Loghood = ',logL_RT
 !IF(obj%logL == 0.)THEN
 !  CALL PRINTPAR(obj)
 !  STOP
@@ -174,6 +175,7 @@ IF(ibadlogL == 0)THEN
   ENDIF
   logL = SUM(EtmpRT)
   IF(ieee_is_nan(logL))THEN
+    print *,' ISNAN IEEE??'
     logL = -HUGE(1._RP)
   ENDIF
 ELSE
