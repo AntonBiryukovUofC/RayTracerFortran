@@ -537,6 +537,7 @@ ELSE
     ENDIF
     iint = iint + 1
   ENDDO
+  IF(iint == 0) iint = 1
   grad = (vel_ref(2,iint+1)-vel_ref(2,iint))/(vel_ref(1,iint+1)-vel_ref(1,iint))
   dz = (z-vel_ref(1,iint))
   vref = vel_ref(2,iint) + dz*grad

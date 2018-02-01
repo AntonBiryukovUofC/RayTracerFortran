@@ -35,7 +35,7 @@ blockcounts = (/ 1,  NLMX*NPL, NLMX*NPL , (NLMX+1)*NPL*NPL,  NPL*NLMX,   NPL*NLM
 !!                S            DresR         DresV        DresT        DarR        DarV        DarT
                 ! NRF1*NSRC, NRF1*NTIME,   NRF1*NTIME,  NRF1*NTIME,  NRF1*NTIME,  NRF1*NTIME,  NRF1*NTIME, &
 !!                DobsRT           DpredRT        DresRT       DarRT      
-                 NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT/)
+                 NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT/) ! DarRT size should be different!
 
 
 !! Oldtypes

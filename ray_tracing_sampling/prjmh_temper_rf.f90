@@ -156,7 +156,7 @@ CLOSE(20)
 obj%k       = INT(tmpmap(1),IB)   !! No. interfaces + 1 (e.g. 3 makes 2 layers and a half space)
 obj%NFP     = (obj%k * NPL)       !! No. forward parameters; NPL -> max No. parameters per layer
 obj%voro    = 0._RP               !! Main array of layer nodes
-obj%voroidx = 0
+obj%voroidx = 1
 obj%arpar   = 0._RP
 obj%sdparRT= 0._RP
 obj%arparRT= 0._RP
@@ -166,15 +166,23 @@ obj%sdaveRT= 0._RP
 DO ivo = 1,obj%k
   ipar = (ivo-1)*NPL+2
   obj%voro(ivo,:) = tmpmap(ipar:ipar+NPL-1)
+
+  IF (I_VARPAR == 0) THEN
   obj%voroidx(ivo,:) = 1
-  DO ipar2 = 1,NPL
-    IF(obj%voro(ivo,ipar2) < -99._RP)THEN
-      obj%voroidx(ivo,ipar2) = 0
-    ELSE
-      obj%voroidx(ivo,ipar2) = 1
-    ENDIF
-  ENDDO
+  ELSE
+      obj%voroidx(ivo,:) = 1
+      DO ipar2 = 1,NPL
+        IF(obj%voro(ivo,ipar2) < -99._RP)THEN
+          obj%voroidx(ivo,ipar2) = 0
+        ELSE
+          obj%voroidx(ivo,ipar2) = 1
+        ENDIF
+      ENDDO
+  ENDIF
 ENDDO
+! Temporary change to voroidx!!!!!!!!
+obj%voroidx = 1
+
 !IF(ICOV == 1) obj%sdparR   = tmpmap(NFPMX+1+1:NFPMX+1+NRF1)
 !IF(ICOV == 1) obj%sdparV   = tmpmap(NFPMX+1+1+NRF1:NFPMX+1+2*NRF1)
 !IF(ICOV == 1) obj%sdparT   = tmpmap(NFPMX+1+1+2*NRF1:NFPMX+1+3*NRF1)
@@ -197,7 +205,7 @@ ENDIF
 IF(I_VARPAR == 0)CALL INTERPLAYER_novar(obj)
 IF(I_VARPAR == 1)CALL INTERPLAYER(obj)
 IF(rank /= src)obj%beta = beta_pt(rank)
-CALL PRINTPAR(obj)
+IF(rank ==src) CALL PRINTPAR(obj)
 
 ALLOCATE( icount(NTHREAD) )
 icount = 0
@@ -256,13 +264,12 @@ IF(IMAP == 1)THEN
   ENDIF
   CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
   CALL MPI_FINALIZE( ierr )
-  print *,' Hello World1, IMAP STOP'
 
   STOP
 ELSE
   IF(rank == 1) THEN ! changed rank == 1 to rank == src
     WRITE(6,*) 'Starting model:'
-    CALL PRINTPAR(obj)
+    IF(rank ==src) CALL PRINTPAR(obj)
     CALL CHECKBOUNDS(obj)
     IF(ioutside == 1)WRITE(*,*)'FAILED in starting model'
     tstart2 = MPI_WTIME()
@@ -281,7 +288,6 @@ ELSE
   ENDIF
 ENDIF
 
-print *,' Hello World2'
 
 CALL FLUSH(6)
 CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
@@ -329,7 +335,12 @@ DO imcmc = 1,NCHAIN
     CALL MPI_RECV(objm(2), 1, objtype2, MPI_ANY_SOURCE,MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr )
     isource2 = status(MPI_SOURCE)  !! This saves the slave id for the following communication
     print *, 'imcmc4'
+    print *, 'For objm1'
+    print *, objm(1)%voroidx
 
+    print *, 'For objm2'
+    print *, objm(2)%voroidx
+    
     IF(IEXCHANGE == 1) THEN
       CALL TEMPSWP_MH(objm(1),objm(2))
     !IF(IAR == 1)CALL UDATE_SDAVE(objm(1),objm(2))
@@ -385,27 +396,37 @@ DO imcmc = 1,NCHAIN
 
   !!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!
   !!                      EXPLORE CALLS
-  print *,'slave1'
+ ! print *,'slave1'
   DO ithin = 1,1
     !! BD MH for fixed complexity:
-    IF (I_VARPAR == 0) CALL EXPLORE_MH_NOVARPAR(obj,objnew,obj%beta)
-
+    IF (I_VARPAR == 0)THEN 
+      CALL EXPLORE_MH_NOVARPAR(obj,objnew,obj%beta)
+    ENDIF
     !! BD MH for variable complexity:
-    IF (I_VARPAR == 1) CALL EXPLORE_MH_VARPAR(obj,objnew,obj%beta)
+    IF (I_VARPAR == 1)THEN
+      print *, ' Got IVARPAR accident'
+      STOP
+      CALL EXPLORE_MH_VARPAR(obj,objnew,obj%beta)
 
-print *,'slave2'
+    ENDIF
+!print *,'slave2'
   ENDDO
   !! MH for non partition parameters:
   CALL EXPLORE_MH(obj,objnew,obj%beta)
-print *,'slave3'
+!print *,'slave3'
   !!                    END EXPLORE CALLS                                    !!
   !!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!
 
   tend = MPI_WTIME()
   obj%tcmp = REAL(tend-tstart,RP)
+  !print *, 'on slave:before'
+  !IF (rank ==1) print *,obj%voroidx
   CALL MPI_SEND(obj, 1,objtype3, src, rank, MPI_COMM_WORLD, ierr)
+
   CALL MPI_RECV(obj, 1,objtype3, src, MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr)
   tstart = MPI_WTIME()
+  !print *, 'on slave:after'
+  !IF (rank ==1) print *,obj%voroidx
 
 !  t_chckpt2 = MPI_WTIME()
   !! Checkpoint every once in a while...
@@ -611,6 +632,7 @@ CALL RANDOM_NUMBER(ran_uni_BD)
 i_bd = 0
 !! Do BIRTH-DEATH MCMC with 0.5 probability
 IF(kmin /= kmax)THEN
+  STOP
   !! Perturbing k:
   CALL RANDOM_NUMBER(ran_unik)
   IF(obj%k == kmax)THEN  
@@ -665,11 +687,19 @@ DO ivo = 1,obj%k
   idxrand = 0
   idxrand(1:NPL) = RANDPERM(NPL)
   DO ipar = 1,NPL
-    iwhich = idxrand(ipar)
+    !iwhich = idxrand(ipar)
+    iwhich = ipar
     IF(ivo == 1 .AND. iwhich == 1) CYCLE
+    !print *, 'Before'
+    !print *, obj%voroidx(ivo,iwhich)
     IF(obj%voroidx(ivo,iwhich) == 1)THEN
+
+
       CALL PROPOSAL(obj,objnew1,ivo,iwhich,1._RP)
       CALL CHECKBOUNDS2(objnew1,ivo,iwhich)
+      !print *,obj%voroidx
+      !print *, 'After'
+
       IF(ioutside == 0)THEN
         IF(ISMPPRIOR == 0)CALL LOGLHOOD(objnew1,1)
         IF(ISMPPRIOR == 1)CALL LOGLHOOD2(objnew1)
@@ -1765,7 +1795,6 @@ REAL(KIND=RP),DIMENSION(NFPMX)   :: tmpvoro  ! Temporary Voronoi cell array for 
 !INTEGER(KIND=RP),DIMENSION(NFPMX):: tmpprop,tmpacc
 REAL(KIND=RP),DIMENSION(NPL)     :: tmp  ! Temporary Voronoi cell array for saving
 REAL(KIND=RP) :: tmaster
-print *, ' Attempting to save a sample '
 !!
 !! Save object into global sample array
 !!
@@ -1821,7 +1850,6 @@ DO ic = 1,2
     !!
     IF(ikeep > NKEEP)THEN
       DO jidx=1,NKEEP
-        print *, 'Trying to write into the file!'
 
         WRITE(usample,207) sample(jidx,:)
       ENDDO
@@ -1852,7 +1880,6 @@ END SUBROUTINE SAVESAMPLE
 SUBROUTINE SAVEREPLICA(obj,predfile,obsfile)
 
 !=======================================================================
-USE MPI
 USE RJMCMC_COM
 IMPLICIT NONE
 
@@ -1861,7 +1888,7 @@ TYPE (objstruc)  :: obj      ! Best object
 CHARACTER(64) :: predfile, obsfile
 
 WRITE(6,*) 'Global best model:'
-CALL PRINTPAR(obj)
+IF(rank ==src) CALL PRINTPAR(obj)
 WRITE(6,*) 'Global best logL = ',obj%logL
 
 IF(I_RT == 1)THEN

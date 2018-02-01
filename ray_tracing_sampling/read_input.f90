@@ -256,6 +256,7 @@ IF(rank == src)THEN
   WRITE(6,*) 'ISETSEED  = ', ISETSEED
   WRITE(6,*) 'IEXCHANGE = ', IEXCHANGE
   WRITE(6,*) 'I_VREF = ', I_VREF
+  WRITE(6,*) 'I_VARPAR      = ', I_VARPAR    
 
   !WRITE(6,*) 'NTIME     = ', NTIME      !! No. time samples
   WRITE(6,*) 'NSRC      = ', NSRC       !! No. of rays (sources)

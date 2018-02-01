@@ -136,6 +136,7 @@ In order to look at the distributions for each parameter, we need to melt the ta
 
 ```{r fig.height=10, fig.width=10}
 var.to.keep <- c(col.names.voro,'SdRT')
+#chain.df <- chain.df %>% filter(Z2>0)
 chain.melted <- melt(chain.df,id.vars = 'iter') %>% filter(variable %in% var.to.keep) %>% tbl_df() %>% mutate(value = as.numeric(value)) 
 ggplot(data = chain.melted,aes(x=value,group = variable)) + geom_histogram(bins=100) + facet_wrap(~variable,scales = 'free')
 ```
