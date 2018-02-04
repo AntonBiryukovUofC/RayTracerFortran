@@ -319,38 +319,32 @@ ncswapprop = 0
 ikeep = 1
 tsave1 = MPI_WTIME()
 DO imcmc = 1,NCHAIN
-  print *, 'imcmc1'
   !!
   !!  Receiving samples from any two slave (no particular order -> auto load
   !!  balancing) and propose swap:
   !!
   DO ithin = 1,ICHAINTHIN
-    print *, 'imcmc2'
-
+    
     CALL MPI_RECV(objm(1), 1, objtype1, MPI_ANY_SOURCE,MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr )
     isource1 = status(MPI_SOURCE)  !! This saves the slave id for the following communication
     tstart = MPI_WTIME()
-    print *, 'imcmc3'
-
+    
     CALL MPI_RECV(objm(2), 1, objtype2, MPI_ANY_SOURCE,MPI_ANY_TAG, MPI_COMM_WORLD, status, ierr )
     isource2 = status(MPI_SOURCE)  !! This saves the slave id for the following communication
-    print *, 'imcmc4'
-    print *, 'For objm1'
-    print *, objm(1)%voroidx
+    !print *, 'For objm1'
+    !print *, objm(1)%voroidx
 
-    print *, 'For objm2'
-    print *, objm(2)%voroidx
+    !print *, 'For objm2'
+    !print *, objm(2)%voroidx
     
     IF(IEXCHANGE == 1) THEN
       CALL TEMPSWP_MH(objm(1),objm(2))
     !IF(IAR == 1)CALL UDATE_SDAVE(objm(1),objm(2))
-    print *, 'imcmc5'
     ENDIF
     CALL MPI_SEND(objm(1), 1,objtype1, isource1, rank, MPI_COMM_WORLD, ierr)
     CALL MPI_SEND(objm(2), 1,objtype2, isource2, rank, MPI_COMM_WORLD, ierr)
     tend = MPI_WTIME()
-    print *, 'imcmc6'
-
+    
   ENDDO
 
 !  t_chckpt2 = MPI_WTIME()
@@ -1833,7 +1827,7 @@ DO ic = 1,2
 !                          objm(ic)%arpar,objm(ic)%sdpar,&
 !                          REAL(tmpacc,RP)/REAL(tmpprop,RP),REAL(objm(ic)%iaccept_bd,RP),&
 !                          REAL(objm(ic)%ipropose_bd,RP),REAL(i_bd,RP),objm(ic)%tcmp,REAL(isource,RP) /)
-    print *, 'Filling sample array'
+    !print *, 'Filling sample array'
      sample(ikeep,:) =  (/ objm(ic)%logL, objm(ic)%logPr, objm(ic)%tcmp, REAL(objm(ic)%k,RP), & ! 4 parameters
                            tmpvoro,objm(ic)%sdparRT,objm(ic)%arpar,objm(ic)%arparRT, &
                            REAL(iaccept,RP)/REAL(iaccept+ireject,RP),REAL(objm(ic)%iaccept_bd,RP),&
@@ -1861,7 +1855,7 @@ DO ic = 1,2
     ENDIF
   ENDIF
 ENDDO
-print *, ' Savesample end'
+!print *, ' Savesample end'
 
 CALL FLUSH(6)
 202 FORMAT(A3,I8,1F14.4,I4,I10,I10,I8,1f12.4)

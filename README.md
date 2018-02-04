@@ -49,3 +49,4 @@ The total number of entries is ncount2 (from the main code file)
 16. Need to figure out the size of sample (columns on sample file - there are too many for some reason)
 17. Sampling has a lot of zeroes in SdRt, otherwise looks close to uniform !
 18. DarRT size should be different!!
+19. Feed through the array sizes in my subroutine-R

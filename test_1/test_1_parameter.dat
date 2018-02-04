@@ -9,12 +9,12 @@
  1   ! I_RT      !! Invert SWD data
  0   ! I_VREF
  0   ! I_VPVS
- 1   ! ISMPPRIOR
+ 0   ! ISMPPRIOR
  0   ! ISETSEED
  0   ! IEXCHANGE
- 3  ! NDAT_RT   !! No. RT data
+ 10  ! NDAT_RT   !! No. RT data
  1   ! NMODE      !! No. RT modes (Phases in our case)
- 3  ! NSRC       !! No. of raypaths computed 
+ 10  ! NSRC       !! No. of raypaths computed 
  3   ! NLMN       !! Max number of layers
  3  ! NLMX       !! Max number of layers
  3   ! ICHAINTHIN !! Chain thinning interval

@@ -37,7 +37,6 @@ blockcounts = (/ 1,  NLMX*NPL, NLMX*NPL , (NLMX+1)*NPL*NPL,  NPL*NLMX,   NPL*NLM
 !!                DobsRT           DpredRT        DresRT       DarRT      
                  NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT, NMODE*NDAT_RT/) ! DarRT size should be different!
 
-
 !! Oldtypes
 oldtypes(1)     = MPI_INTEGER
 oldtypes(2)     = MPI_DOUBLE_PRECISION
@@ -103,7 +102,7 @@ TYPE (objstruc) :: obj
 ALLOCATE( obj%voro(NLMX,NPL),obj%voroidx(NLMX,NPL))
 ALLOCATE(obj%par((NLMX+1)*NPL*NPL) )
 ALLOCATE( obj%hiface(NLMX*NPL),obj%ziface(NLMX*NPL) )
-print *,' yaii'
+
 ALLOCATE( obj%sdaveRT(NMODE) )
 
 ALLOCATE( obj%sdparRT(NMODE),obj%arparRT(NMODE),obj%arpar(NMODE))
@@ -126,9 +125,12 @@ obj%arpar    = 0._RP
 obj%arparRT    = 0._RP
 obj%idxar    = 0
 obj%idxarRT    = 0
+obj%DobsRT = 0._RP
+obj%DpredRT = 0._RP
+obj%DresRT = 0._RP
+obj%DarRT = 0._RP
 
 obj%gvoroidx = 0
-print *,' yaee'
 
 END SUBROUTINE ALLOC_OBJ
 !=======================================================================

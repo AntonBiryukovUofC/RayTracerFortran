@@ -1,8 +1,10 @@
 module raymod
+   USE ieee_arithmetic
 
    implicit none
    private
    public :: whichLayer,GetPTime, InsertLayer,costFunc,costFunc_Prime,solve, dofullforwardproblem,solvebst,TraceRays
+
    contains
 
 
@@ -42,7 +44,7 @@ module raymod
     double precision, intent(in) :: depths(NLayers)
     double precision, intent(in) :: vels(NLayers+1)
     double precision, intent(in) :: dph
-    double precision, DIMENSION(:)::  vels_new,depths_new
+    double precision, DIMENSION(100)::  vels_new,depths_new
 
 
 
@@ -113,7 +115,7 @@ module raymod
         P0_bad=.TRUE.
 
         do while (P0_bad)
-            if (ISNAN(sum(sqrt(1-(p0**2)*(vp+1)**2)))) then
+            if (ieee_is_nan(sum(sqrt(1-(p0**2)*(vp+1)**2)))) then
                 p0=p0/2
                ! print *,'p0 divided by 2...'
             else

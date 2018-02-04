@@ -39,4 +39,6 @@ csv_*.*
 
 # Chain results
 chain*.csv
+test_1/out.dat
+test_1/test_1_voro_*.*
 .Rhistory

@@ -10,7 +10,7 @@ This notebook is used for developing the function for saving the data in the app
 # Run the simulation
 ## Prepare the libraries
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 setwd('/home/geoanton/RayTracerFortran/RayTracer/')
 library(dplyr)
 library(ggplot2)
@@ -35,9 +35,9 @@ print(src.to.write)
 or randomly..:
 
 ```{r}
-NSrc <- 4
+NSrc <- 10
 set.seed(10)
-src.df <- tibble(z=runif(NSrc,min=200,max=6500),x=runif(NSrc,min=200,max=4500),y=runif(NSrc,min=200,max=4500))
+src.df <- tibble(z=runif(NSrc,min=200,max=6500),x=runif(NSrc,min=10,max=4500),y=runif(NSrc,min=10,max=4500))
 srcd <- src.df$z
 srco <- sqrt(src.df$x**2+src.df$y**2)
 src.to.write <- tibble(offset = srco,depth=srcd)
@@ -51,7 +51,8 @@ Simple three-layered model here:
 v <- c(3001,5000,3000)
 d <- c(2000, 4000) # That's not thicknesses, that's depth to interfaces !
 NLayers <- length(d)
-NLayersMax <- 10
+NLayersMax <- 3
+
 
 ```
 
@@ -64,23 +65,32 @@ timeP <- .Fortran("dff" ,vels=as.numeric(v),depths=as.numeric(d),NLayers=as.inte
                   src_offset=as.numeric(srco),src_depth=as.numeric(srcd),NSrc=as.integer(NSrc),
                   timeP = as.numeric(timeP),keep_delta=as.integer(kd))
 print(timeP$timeP)
-
 ```
 
+
 and save its results:
+
+
 ```{r}
 #
 # Save the travel times into a one column file:
 #
+sd = 0.016
+timeP$timeP <- timeP$timeP + rnorm(NSrc,mean=0,sd=sd)
 write.table(tibble(t=timeP$timeP),file = sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_RT.txt',base.name),sep = ' ',row.names = F,col.names = F)
 #
 # Save the source offsets and depths
 #
 write.table(src.to.write,file = sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_src_data.txt',base.name),sep = ' ',row.names = F,col.names = F)
 
+
+
+
 ```
 
 ## Check the ray results if debugging was switched on
+
+
 ```{r fig.height=10, fig.width=10}
 read.rays <- function(file = "rays.dat",nrays=1,timeP= NA)
 {
@@ -116,16 +126,24 @@ We need to follow the notation given in prmjh_temper.f90 and read in the numbers
 Here we setup the names of the columns, as well as read the file with the sample table:
 
 ```{r}
+
+
+
 col.names <- c('LogL','LogPrior','tcmp','k')
 k <- NLayers+1 # by convention of Jan's RJMCMC
 NParamPerLayer <- 2
 NVoro <- NLayersMax*NParamPerLayer
 col.names.voro <- rep(NA,NVoro)
 # Make Voro Column names - this will be my velocity profiles
+
 col.names.voro[seq(1,NVoro-1,by=2)] <- paste0(('Z'),seq(NVoro/2))
 col.names.voro[seq(2,NVoro,by=2)] <- paste0(('V'),seq(NVoro/2))
 after.voro.names <- c('SdRT','ArPar','ArParRT','acc_ratio','iacc_bd','irej_bd','iacc_bds','ic','rank')
 all.names <- c(col.names,col.names.voro,after.voro.names)
+
+var.to.keep <- c(col.names.voro,'SdRT')
+
+true.model = tibble(variable =c(col.names.voro[order(col.names.voro)],"SdRT"),value = c(v,c(0,d),sd))
 
 filename <- '~/RayTracerFortran/RayTracer/test_1/test_1_voro_sample.txt'
 chain.df <- read.table(filename) %>% tbl_df() %>% mutate(iter = row_number())
@@ -135,10 +153,12 @@ colnames(chain.df)[1:length(all.names)] <- all.names
 In order to look at the distributions for each parameter, we need to melt the table:
 
 ```{r fig.height=10, fig.width=10}
-var.to.keep <- c(col.names.voro,'SdRT')
+
 #chain.df <- chain.df %>% filter(Z2>0)
-chain.melted <- melt(chain.df,id.vars = 'iter') %>% filter(variable %in% var.to.keep) %>% tbl_df() %>% mutate(value = as.numeric(value)) 
-ggplot(data = chain.melted,aes(x=value,group = variable)) + geom_histogram(bins=100) + facet_wrap(~variable,scales = 'free')
+chain.melted <- melt(chain.df,id.vars = 'iter') %>% filter(variable %in% var.to.keep) %>% tbl_df() %>% mutate(value = as.numeric(value))
+p <- ggplot(data = chain.melted,aes(x=value,group = variable)) + geom_histogram(bins=100) + facet_wrap(~variable,scales = 'free') + geom_vline(aes(xintercept=value),data = true.model,col = 'salmon',size=1.2)
+print(p)
+
 ```
 
 

@@ -1,6 +1,6 @@
-FC      = mpifort -C -L/usr/lib -llapack -lblas -g 
-FCSWD = mpifort -fc=gfortran -C -g 
-FCRS = mpifort -fc=gfortran -C -g 
+FC      = mpifort -L/usr/lib:/opt/pgi/linux86-64/17.10/lib/ -llapack -lblas -g
+FCSWD = mpifort -g
+FCRS = mpifort -g
 #FC      = mpif90 -fc=gfortran -L/usr/lib -llapack -lblas -fast -O4 -fastsse
 #FCSWD = mpif90 -fc=gfortran -fast -O4 -fastsse
 #FCRS = mpif90 -fc=gfortran -fast -O4 -fastsse

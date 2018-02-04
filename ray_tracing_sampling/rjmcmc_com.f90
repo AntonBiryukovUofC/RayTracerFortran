@@ -72,8 +72,8 @@ MODULE RJMCMC_COM
 !!
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: minlim
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: maxlim
-   INTEGER(KIND=IB)            :: kmin     = 3       ! Min number of layers
-   INTEGER(KIND=IB)            :: kmax     = 3       ! Max number of layers
+   INTEGER(KIND=IB)            :: kmin               ! Min number of layers
+   INTEGER(KIND=IB)            :: kmax               ! Max number of layers
    REAL(KIND=RP),ALLOCATABLE,DIMENSION(:):: pk       ! Poisson prior on k
    REAL(KIND=RP)               :: lambda             ! Lambda parameter for Poisson prior on k
    REAL(KIND=RP)               :: hmin               ! Min allowed layer thickness
@@ -208,6 +208,7 @@ MODULE RJMCMC_COM
   INTEGER :: objtype2     !! Name of objtype for MPI sending
   INTEGER :: objtype3     !! Name of objtype for MPI sending
    TYPE :: objstruc
+      SEQUENCE 
       INTEGER(KIND=IB)                        :: k          ! No. nodes
       REAL(KIND=RP),ALLOCATABLE,DIMENSION(:,:):: voro       ! 1D layer nodes
       INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:,:):: voroidx    ! 1D layer nodes index
