@@ -13,8 +13,13 @@ This notebook is used for developing the function for saving the data in the app
 ```{r message=FALSE, warning=FALSE}
 setwd('/home/geoanton/RayTracerFortran/RayTracer/')
 library(dplyr)
+library(hexbin)
 library(ggplot2)
 library(reshape2)
+library(pbapply)
+# define jet colormap
+jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+
 dyn.load("./subroutineR-quiet.so")
 base.name <- 'test_1'
 ```
@@ -35,9 +40,9 @@ print(src.to.write)
 or randomly..:
 
 ```{r}
-NSrc <- 10
-set.seed(10)
-src.df <- tibble(z=runif(NSrc,min=200,max=6500),x=runif(NSrc,min=10,max=4500),y=runif(NSrc,min=10,max=4500))
+NSrc <- 20
+set.seed(12)
+src.df <- tibble(z=runif(NSrc,min=50,max=6500),x=runif(NSrc,min=10,max=4500),y=runif(NSrc,min=10,max=4500))
 srcd <- src.df$z
 srco <- sqrt(src.df$x**2+src.df$y**2)
 src.to.write <- tibble(offset = srco,depth=srcd)
@@ -48,7 +53,7 @@ src.to.write <- tibble(offset = srco,depth=srcd)
 Simple three-layered model here:
 
 ```{r}
-v <- c(3001,5000,3000)
+v <- c(3001,4200,5200)
 d <- c(2000, 4000) # That's not thicknesses, that's depth to interfaces !
 NLayers <- length(d)
 NLayersMax <- 3
@@ -75,8 +80,8 @@ and save its results:
 #
 # Save the travel times into a one column file:
 #
-sd = 0.016
-timeP$timeP <- timeP$timeP + rnorm(NSrc,mean=0,sd=sd)
+SdRT = 0.016
+timeP$timeP <- timeP$timeP + rnorm(NSrc,mean=0,sd=SdRT)
 write.table(tibble(t=timeP$timeP),file = sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_RT.txt',base.name),sep = ' ',row.names = F,col.names = F)
 #
 # Save the source offsets and depths
@@ -110,7 +115,7 @@ rays.df <- read.rays(nrays=NSrc,timeP = timeP$timeP)
 p <- ggplot(data=rays.df,aes(x=delta.cum,y=depth.cum,label = ray.label,col = factor(ray))) + geom_line() + scale_y_reverse()+geom_point()+geom_hline(yintercept = c(0,d),linetype=2)+geom_label()
 ggsave(p,filename = './pngs/ray_example.png',width = 7,height = 4)
 print(p)
-print(timeP$timeP)
+print(rays.df)
 ```
 
 ## Plot the sampling from the voro_sample file
@@ -135,31 +140,105 @@ NParamPerLayer <- 2
 NVoro <- NLayersMax*NParamPerLayer
 col.names.voro <- rep(NA,NVoro)
 # Make Voro Column names - this will be my velocity profiles
+vel.names <- paste0(('V'),seq(NVoro/2))
+depth.names <- paste0(('Z'),seq(NVoro/2))
+col.names.voro[seq(1,NVoro-1,by=2)] <- depth.names
+col.names.voro[seq(2,NVoro,by=2)] <- vel.names
 
-col.names.voro[seq(1,NVoro-1,by=2)] <- paste0(('Z'),seq(NVoro/2))
-col.names.voro[seq(2,NVoro,by=2)] <- paste0(('V'),seq(NVoro/2))
 after.voro.names <- c('SdRT','ArPar','ArParRT','acc_ratio','iacc_bd','irej_bd','iacc_bds','ic','rank')
 all.names <- c(col.names,col.names.voro,after.voro.names)
 
 var.to.keep <- c(col.names.voro,'SdRT')
 
-true.model = tibble(variable =c(col.names.voro[order(col.names.voro)],"SdRT"),value = c(v,c(0,d),sd))
+true.model = tibble(variable =c(col.names.voro[order(col.names.voro)],"SdRT"),value = c(v,c(0,d),SdRT))
 
 filename <- '~/RayTracerFortran/RayTracer/test_1/test_1_voro_sample.txt'
 chain.df <- read.table(filename) %>% tbl_df() %>% mutate(iter = row_number())
 colnames(chain.df)[1:length(all.names)] <- all.names 
 ```
 
+# Marginal distributions
+
 In order to look at the distributions for each parameter, we need to melt the table:
 
-```{r fig.height=10, fig.width=10}
+```{r fig.height=4, fig.width=12}
 
 #chain.df <- chain.df %>% filter(Z2>0)
 chain.melted <- melt(chain.df,id.vars = 'iter') %>% filter(variable %in% var.to.keep) %>% tbl_df() %>% mutate(value = as.numeric(value))
-p <- ggplot(data = chain.melted,aes(x=value,group = variable)) + geom_histogram(bins=100) + facet_wrap(~variable,scales = 'free') + geom_vline(aes(xintercept=value),data = true.model,col = 'salmon',size=1.2)
+p <- ggplot(data = chain.melted,aes(x=value,group = variable)) + geom_histogram(bins=100) + facet_wrap(~variable,scales = 'free',ncol = 4) + geom_vline(aes(xintercept=value),data = true.model,col = 'salmon',size=1.2)
+p.traces <- ggplot(data = chain.melted,aes(x=iter,group = variable,y=value)) + geom_line() + facet_wrap(~variable,scales = 'free',ncol = 1)
 print(p)
 
+print(p.traces)
+ggsave(sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_marginals.png',base.name),p,width = 12,height=4)
+ggsave(sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_traces.png',base.name),p.traces,width = 12,height=8)
+
+
 ```
+
+# Velocity profiles from the chains:
+
+```{r}
+
+# Profile drawing function:
+drawProfiles <- function(x)
+{
+d=as.numeric(x[(NLayers+2) : (2*(NLayers+1))])
+v=as.numeric(x[1:(NLayers+1)])
+f <- approxfun(d,v,method = "constant")
+dnew <- seq(1,8000,length.out = 200)
+vnew <- f(dnew)
+vnew[is.na(vnew)] = v[length(v)]
+dd <- d[-1]
+for (i in seq(length(dd)) )
+{
+  ptsX=seq(from=min(v[i],v[i+1]),to = max(v[i],v[i+1]),by=40)
+  ptsY=rep(dd[i],length(ptsX))
+  dnew=c(dnew,ptsY)
+  vnew=c(vnew,ptsX)
+}
+prof <-tbl_df(data.frame(d=dnew,v=vnew))
+return(prof)
+}
+
+thin=10
+burnin =1000
+samples <- chain.df %>% select(c(vel.names,depth.names))
+samples.thinned <- as.matrix(samples[seq(burnin,nrow(samples),by=thin),1:ncol(samples)])
+profs <-do.call("rbind",pblapply(seq(nrow(samples.thinned)), function(i) {df <- drawProfiles(samples.thinned[i,]);df$id=i;return(tbl_df(df))},cl=4)) %>% tbl_df()
+prof.plot <- ggplot(data = profs,aes(x=v,y=d)) + geom_bin2d(bins =100) + labs(x = "Vel [m/s]",y = "Depth [m]")+ 
+              theme(panel.background = element_rect(fill=alpha("#00007F",0.9), colour=alpha("#00007F",0.9)),panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+              scale_y_reverse(limits = c(7990,10))+
+              scale_fill_gradientn(colors = jet.colors(500))
+newdat <- ggplot_build(prof.plot)$data[[1]]
+
+# #00007F
+# dark blue = #132B43
+profs.p <- profs  %>% arrange(id,d)
+prof.plot.scatter <- ggplot(data = profs.p,aes(x=v,y=d,colour=id)) + geom_path(size=2,colour="blue",alpha=0.02)+ scale_y_reverse(limits = c(7990,10)) + labs(x = "Vel [m/s]",y = "Depth [m]") 
+ggsave( sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_scatter.png',base.name),prof.plot.scatter,width = 5,height=12)
+# Normalize the profile of the velocities within ybins !
+# otherwise prof.plot can be saved 
+newdat.norm <- newdat %>% group_by(ybin) %>% mutate(val.norm = value / max(value))
+p.norm<- ggplot(data = newdat.norm,aes(x=x,y=y,fill=val.norm)) + geom_raster() + labs(x = "Vel [m/s]",y = "Depth [m]")+ 
+              theme(panel.background = element_rect(fill=alpha("#00007F",0.5), colour=alpha("#00007F",0.02)),panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+              scale_fill_gradientn(colors = jet.colors(500))
+ggsave( sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_profiles.png',base.name),p.norm,width = 5,height=12)
+
+
+
+
+```
+
+# Try to normalize the histograms within groups of d:
+
+```{r}
+
+
+
+
+```
+
 
 
 

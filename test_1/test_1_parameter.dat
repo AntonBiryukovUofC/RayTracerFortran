@@ -11,15 +11,15 @@
  0   ! I_VPVS
  0   ! ISMPPRIOR
  0   ! ISETSEED
- 0   ! IEXCHANGE
- 10  ! NDAT_RT   !! No. RT data
+ 1   ! IEXCHANGE
+ 20  ! NDAT_RT   !! No. RT data
  1   ! NMODE      !! No. RT modes (Phases in our case)
- 10  ! NSRC       !! No. of raypaths computed 
+ 20  ! NSRC       !! No. of raypaths computed 
  3   ! NLMN       !! Max number of layers
  3  ! NLMX       !! Max number of layers
  3   ! ICHAINTHIN !! Chain thinning interval
  100 ! NKEEP      !! No. models to keep before writing
- 1   ! NPTCHAINS1 !! Number of chains with T=1
+ 3   ! NPTCHAINS1 !! Number of chains with T=1
  1.2 ! dTlog      !! Temperature increment
  3.  ! lambda     !! Lambda for Poisson prior on k
  10000. ! hmx        !! Max. partition depth
