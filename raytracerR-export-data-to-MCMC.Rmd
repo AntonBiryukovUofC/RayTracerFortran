@@ -54,6 +54,8 @@ Simple three-layered model here:
 ```{r}
 v <- c(3001,4200,5200)  
 d <- c(2000, 4000)   # That's not thicknesses, that's depth to interfaces !
+SdRT = 0.016
+
 NLayers <- length(d)
 NLayersMax <- 3
 ```
@@ -65,10 +67,14 @@ Here we set the parameters of the MCMC simulations instead of manually correctin
 ```{r}
 
 param.list <- list(NPL = 2, ISMPPRIOR = 0, IEXCHANGE = 1, NDAT_RT = NSrc,
-                   NMODE = 1, NSRC=NSrc,NLMX = NLayersMax, NLMN = 1, ICHAINTHIN = 5,
+                   NMODE = 1, NSRC=NSrc,NLMX = NLayersMax, NLMN = 3, ICHAINTHIN = 5,
                    NKEEP=100, NPTCHAINS = 1, dTlog=1.2, lambda = 3.01, hmx = 10000.1, hmn = 100.1,dVs = 0.1, dVpVs=0.1,
-                   VpVsmin = 1.5, VpVsmax = 1.8,sdmin = c(0.001,0.001),sdmax = c(0.07,0.07))
-makeParameterFile(param.list = param.list,output.file = '~/RayTracerFortran/RayTracer/test_1/test_X_parameter.dat')
+                   VpVsmin = 1.5, VpVsmax = 1.8,sdmin = c(0.001,0.001),sdmax = c(0.07,0.07),
+                   # MAP below:
+                   MAP.k=3, MAP.vel = c(3000,4000,5000) , MAP.d = c(0,2000,4000), MAP.sd = SdRT)
+makeParameterFile(param.list = param.list,output.file = '~/RayTracerFortran/RayTracer/test_1/test_1_parameter.dat') ## Create  a parameter file
+makeMAPFile(param.list = param.list,output.file = '~/RayTracerFortran/RayTracer/test_1/test_1_map.dat') ## Create  a parameter file
+
 
 
 ```
@@ -87,7 +93,6 @@ print(timeP$timeP)
 and save its results:
 ```{r}
 # Save the travel times into a one column file:
-SdRT = 0.016
 timeP$timeP <- timeP$timeP + rnorm(NSrc,mean=0,sd=SdRT)
 write.table(tibble(t=timeP$timeP),file = sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_RT.txt',base.name),sep = ' ',row.names = F,col.names = F)
 # Save the source offsets and depths

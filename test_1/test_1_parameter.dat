@@ -15,19 +15,19 @@
  20  ! NDAT_RT   !! No. RT data
  1   ! NMODE      !! No. RT modes (Phases in our case)
  20  ! NSRC       !! No. of raypaths computed 
- 3   ! NLMN       !! Max number of layers
+ 3   ! NLMN       !! Min number of layers
  3  ! NLMX       !! Max number of layers
- 3   ! ICHAINTHIN !! Chain thinning interval
+ 5   ! ICHAINTHIN !! Chain thinning interval
  100 ! NKEEP      !! No. models to keep before writing
- 3   ! NPTCHAINS1 !! Number of chains with T=1
+ 1   ! NPTCHAINS1 !! Number of chains with T=1
  1.2 ! dTlog      !! Temperature increment
- 3.  ! lambda     !! Lambda for Poisson prior on k
- 10000. ! hmx        !! Max. partition depth
- 0.1  ! hmin       !! Min. layer thickness (must be small enough to not violate detailed balance)
+ 3.01  ! lambda     !! Lambda for Poisson prior on k
+ 10000.1 ! hmx        !! Max. partition depth
+ 100.1  ! hmin       !! Min. layer thickness (must be small enough to not violate detailed balance)
  1000 ! TCHCKPT    !! Checkpointing interval in s
  0.1 ! dVs        !! Vs one sided prior width (relative to background model)
  0.1 ! dVpVs      !! VpVs ratio one sided prior width
  0.001 0.001 ! sdmn       !! data (residual) error standard deviation prior lower limit
- 0.07 0.07  ! sdmx       !! data (residual) error standard deviation prior upper limit
+ 0.07 0.07 ! sdmx       !! data (residual) error standard deviation prior upper limit
  1.5 ! VpVsmin   !! minimum VpVs ratio
  1.8 ! VpVsmax   !! maximum VpVs ratio

@@ -55,6 +55,16 @@ drawProfiles <- function(x,NLayers=NA)
 }
 
 
+#' Creates a valid parameter.dat file for MCMC given settings in param.list
+#'
+#' @param param.list 
+#' @param example.file 
+#' @param output.file 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 makeParameterFile <- function(param.list=NA,example.file = '~/RayTracerFortran/RayTracer/example_parameter.dat',output.file ="~/RayTracerFortran/RayTracer/test_parameter.dat")
 {
   if (is.na(param.list))
@@ -93,5 +103,45 @@ makeParameterFile <- function(param.list=NA,example.file = '~/RayTracerFortran/R
 }
 
 
+#' Creates a Maximum a posteriori file _MAP.dat given the param.list with MAP.* values of the most likely geological scenario
+#'
+#' @param param.list 
+#' @param output.file 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+makeMAPFile <- function(param.list = NA, output.file ="~/RayTracerFortran/RayTracer/test_MAP.dat")
+{
+  if (is.na(param.list))
+  {
+  message('Nothing was passed as a param list!') 
+  return(NA)
+  }
+  NVoro <- param.list$MAP.k * param.list$NPL
+  n.entries <- param.list$NLMX * param.list$NPL * param.list$NPL 
+  MAP.row = rep(0.0,2*n.entries)
+  map.vd<- rep(NA,param.list$MAP.k)
+  # Make Voro Column names - this will be my velocity profiles
+  map.vd[seq(1,NVoro-1,by=2)] <- param.list$MAP.d
+  map.vd[seq(2,NVoro,by=2)] <- param.list$MAP.v
+
+  MAP.row[1] <- param.list$MAP.k
+  MAP.row[2:(2*param.list$MAP.k+2)] <- map.vd
+  MAP.row[(2*param.list$MAP.k+2)] <- param.list$MAP.sd
+  fmt <- paste0(c('%d',rep(' %3.2f',2*n.entries-1)) ,collapse = '')
+  MAP.row.char <- do.call(sprintf, c(list(fmt), MAP.row))
+  
+  
+  fileContent <- MAP.row.char
+  con <- file(output.file, "wb")
+  writeChar(fileContent, con, nchar(fileContent), eos = NULL)
+  close(con)
+  
+  return(MAP.row.char)
+  
+  
+}
 
 
