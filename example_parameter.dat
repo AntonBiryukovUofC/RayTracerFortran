@@ -1,0 +1,33 @@
+ 0   ! IMAP
+ 1   ! ICOV
+ 0   ! ENOS       !! Even numbered order statistic on k (avoids thin layers)
+ 1   ! IPOIPR     !! Applies Poisson prior on k
+ 0   ! IAR
+ NPL_VAL   ! NPL
+ 0   ! I_VARPAR
+ 0   ! IBD_SINGLE
+ 1   ! I_RT      !! Invert SWD data
+ 0   ! I_VREF
+ 0   ! I_VPVS
+ ISMPPRIOR_VAL   ! ISMPPRIOR
+ 0   ! ISETSEED
+ IEXCHANGE_VAL   ! IEXCHANGE
+ NDAT_RT_VAL  ! NDAT_RT   !! No. RT data
+ NMODE_VAL   ! NMODE      !! No. RT modes (Phases in our case)
+ NSRC_VAL  ! NSRC       !! No. of raypaths computed 
+ NLMN_VAL   ! NLMN       !! Min number of layers
+ NLMX_VAL  ! NLMX       !! Max number of layers
+ ICHAINTHIN_VAL   ! ICHAINTHIN !! Chain thinning interval
+ NKEEP_VAL ! NKEEP      !! No. models to keep before writing
+ NPTCHAINS1_VAL   ! NPTCHAINS1 !! Number of chains with T=1
+ dTlog_VAL ! dTlog      !! Temperature increment
+ lambda_VAL  ! lambda     !! Lambda for Poisson prior on k
+ hmx_VAL ! hmx        !! Max. partition depth
+ hmn_VAL  ! hmin       !! Min. layer thickness (must be small enough to not violate detailed balance)
+ 1000 ! TCHCKPT    !! Checkpointing interval in s
+ dVs_VAL ! dVs        !! Vs one sided prior width (relative to background model)
+ dVpVs_VAL ! dVpVs      !! VpVs ratio one sided prior width
+ sdmn_VAL ! sdmn       !! data (residual) error standard deviation prior lower limit
+ sdmx_VAL ! sdmx       !! data (residual) error standard deviation prior upper limit
+ VpVsmin_VAL ! VpVsmin   !! minimum VpVs ratio
+ VpVsmax_VAL ! VpVsmax   !! maximum VpVs ratio

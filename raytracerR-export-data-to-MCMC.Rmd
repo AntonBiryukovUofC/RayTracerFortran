@@ -26,7 +26,6 @@ base.name <- 'test_1'
 ## Setup source offsets and depths
 
 From file:
-
 ```{r}
 src.df <- read.csv('/home/geoanton/RayTracerFortran/RayTracer/eqdf.csv',header=T)
 srcd <- src.df$z
@@ -53,15 +52,29 @@ src.to.write <- tibble(offset = srco,depth=srcd)
 Simple three-layered model here:
 
 ```{r}
-v <- c(3001,4200,5200)
-d <- c(2000, 4000) # That's not thicknesses, that's depth to interfaces !
+v <- c(3001,4200,5200)  
+d <- c(2000, 4000)   # That's not thicknesses, that's depth to interfaces !
 NLayers <- length(d)
 NLayersMax <- 3
+```
+
+## Setup the parameter.dat file for MCMC
+
+Here we set the parameters of the MCMC simulations instead of manually correcting them :
+
+```{r}
+
+param.list <- list(NPL = 2, ISMPPRIOR = 0, IEXCHANGE = 1, NDAT_RT = NSrc,
+                   NMODE = 1, NSRC=NSrc,NLMX = NLayersMax, NLMN = 1, ICHAINTHIN = 5,
+                   NKEEP=100, NPTCHAINS = 1, dTlog=1.2, lambda = 3.01, hmx = 10000.1, hmn = 100.1,dVs = 0.1, dVpVs=0.1,
+                   VpVsmin = 1.5, VpVsmax = 1.8,sdmin = c(0.001,0.001),sdmax = c(0.07,0.07))
+makeParameterFile(param.list = param.list,output.file = '~/RayTracerFortran/RayTracer/test_1/test_X_parameter.dat')
 
 
 ```
 
-## Run forward model
+
+## Run forward model and save the 
 
 ```{r}
 kd <- 10 # keep rays in rays.dat ???
@@ -71,46 +84,18 @@ timeP <- .Fortran("dff" ,vels=as.numeric(v),depths=as.numeric(d),NLayers=as.inte
                   timeP = as.numeric(timeP),keep_delta=as.integer(kd))
 print(timeP$timeP)
 ```
-
-
 and save its results:
-
-
 ```{r}
-#
 # Save the travel times into a one column file:
-#
 SdRT = 0.016
 timeP$timeP <- timeP$timeP + rnorm(NSrc,mean=0,sd=SdRT)
 write.table(tibble(t=timeP$timeP),file = sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_RT.txt',base.name),sep = ' ',row.names = F,col.names = F)
-#
 # Save the source offsets and depths
-#
 write.table(src.to.write,file = sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_src_data.txt',base.name),sep = ' ',row.names = F,col.names = F)
-
-
-
-
 ```
 
 ## Check the ray results if debugging was switched on
-
-
 ```{r fig.height=10, fig.width=10}
-read.rays <- function(file = "rays.dat",nrays=1,timeP= NA)
-{
-  ind.delta <- 2*seq(nrays)-1
-  df <- tibble()
-  for (i in seq(nrays))
-  {
-    delta <- c(0,scan(file,skip = ind.delta[i]-1,nlines = 1))
-    depth <- c(0,scan(file,skip = ind.delta[i],nlines = 1))
-    ray <- i
-    df <- bind_rows(df,tibble(delta=delta,depth=depth,ray=ray,ray.label = round(timeP[i],digits=4)  ))
-  }
-  df <- df %>% group_by(ray) %>% mutate(depth.cum = cumsum(depth), delta.cum = cumsum(delta) )
-  return(df)
-}
 rays.df <- read.rays(nrays=NSrc,timeP = timeP$timeP)
 p <- ggplot(data=rays.df,aes(x=delta.cum,y=depth.cum,label = ray.label,col = factor(ray))) + geom_line() + scale_y_reverse()+geom_point()+geom_hline(yintercept = c(0,d),linetype=2)+geom_label()
 ggsave(p,filename = './pngs/ray_example.png',width = 7,height = 4)
@@ -119,21 +104,14 @@ print(rays.df)
 ```
 
 ## Plot the sampling from the voro_sample file
-
 We need to follow the notation given in prmjh_temper.f90 and read in the numbers accordingly :
-
 `sample(ikeep,:) =  (/ objm(ic)%logL, objm(ic)%logPr, objm(ic)%tcmp, REAL(objm(ic)%k,RP), & ! 4 parameters
                            tmpvoro,objm(ic)%sdparRT,objm(ic)%arpar,objm(ic)%arparRT, &
                            REAL(iaccept,RP)/REAL(iaccept+ireject,RP),REAL(objm(ic)%iaccept_bd,RP),&
                            REAL(objm(ic)%ireject_bd,RP),REAL(objm(ic)%iaccept_bds,RP),REAL(ic,RP),REAL(rank,RP) /)`
-                           
-                  
 Here we setup the names of the columns, as well as read the file with the sample table:
 
 ```{r}
-
-
-
 col.names <- c('LogL','LogPrior','tcmp','k')
 k <- NLayers+1 # by convention of Jan's RJMCMC
 NParamPerLayer <- 2
@@ -144,23 +122,19 @@ vel.names <- paste0(('V'),seq(NVoro/2))
 depth.names <- paste0(('Z'),seq(NVoro/2))
 col.names.voro[seq(1,NVoro-1,by=2)] <- depth.names
 col.names.voro[seq(2,NVoro,by=2)] <- vel.names
-
 after.voro.names <- c('SdRT','ArPar','ArParRT','acc_ratio','iacc_bd','irej_bd','iacc_bds','ic','rank')
 all.names <- c(col.names,col.names.voro,after.voro.names)
-
 var.to.keep <- c(col.names.voro,'SdRT')
-
+# Prepare the true.model:
 true.model = tibble(variable =c(col.names.voro[order(col.names.voro)],"SdRT"),value = c(v,c(0,d),SdRT))
-
+# Read the chain from the basename_voro_sample.txt
 filename <- '~/RayTracerFortran/RayTracer/test_1/test_1_voro_sample.txt'
 chain.df <- read.table(filename) %>% tbl_df() %>% mutate(iter = row_number())
 colnames(chain.df)[1:length(all.names)] <- all.names 
 ```
 
 # Marginal distributions
-
 In order to look at the distributions for each parameter, we need to melt the table:
-
 ```{r fig.height=4, fig.width=12}
 
 #chain.df <- chain.df %>% filter(Z2>0)
@@ -179,40 +153,17 @@ ggsave(sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_traces.png',
 # Velocity profiles from the chains:
 
 ```{r}
-
 # Profile drawing function:
-drawProfiles <- function(x)
-{
-d=as.numeric(x[(NLayers+2) : (2*(NLayers+1))])
-v=as.numeric(x[1:(NLayers+1)])
-f <- approxfun(d,v,method = "constant")
-dnew <- seq(1,8000,length.out = 200)
-vnew <- f(dnew)
-vnew[is.na(vnew)] = v[length(v)]
-dd <- d[-1]
-for (i in seq(length(dd)) )
-{
-  ptsX=seq(from=min(v[i],v[i+1]),to = max(v[i],v[i+1]),by=40)
-  ptsY=rep(dd[i],length(ptsX))
-  dnew=c(dnew,ptsY)
-  vnew=c(vnew,ptsX)
-}
-prof <-tbl_df(data.frame(d=dnew,v=vnew))
-return(prof)
-}
-
 thin=10
 burnin =1000
 samples <- chain.df %>% select(c(vel.names,depth.names))
 samples.thinned <- as.matrix(samples[seq(burnin,nrow(samples),by=thin),1:ncol(samples)])
-profs <-do.call("rbind",pblapply(seq(nrow(samples.thinned)), function(i) {df <- drawProfiles(samples.thinned[i,]);df$id=i;return(tbl_df(df))},cl=4)) %>% tbl_df()
+profs <-do.call("rbind",pblapply(seq(nrow(samples.thinned)), function(i) {df <- drawProfiles(samples.thinned[i,],NLayers);df$id=i;return(tbl_df(df))},cl=4)) %>% tbl_df()
 prof.plot <- ggplot(data = profs,aes(x=v,y=d)) + geom_bin2d(bins =100) + labs(x = "Vel [m/s]",y = "Depth [m]")+ 
               theme(panel.background = element_rect(fill=alpha("#00007F",0.9), colour=alpha("#00007F",0.9)),panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
               scale_y_reverse(limits = c(7990,10))+
               scale_fill_gradientn(colors = jet.colors(500))
 newdat <- ggplot_build(prof.plot)$data[[1]]
-
-# #00007F
 # dark blue = #132B43
 profs.p <- profs  %>% arrange(id,d)
 prof.plot.scatter <- ggplot(data = profs.p,aes(x=v,y=d,colour=id)) + geom_path(size=2,colour="blue",alpha=0.02)+ scale_y_reverse(limits = c(7990,10)) + labs(x = "Vel [m/s]",y = "Depth [m]") 
@@ -224,22 +175,7 @@ p.norm<- ggplot(data = newdat.norm,aes(x=x,y=y,fill=val.norm)) + geom_raster() +
               theme(panel.background = element_rect(fill=alpha("#00007F",0.5), colour=alpha("#00007F",0.02)),panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
               scale_fill_gradientn(colors = jet.colors(500))
 ggsave( sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_profiles.png',base.name),p.norm,width = 5,height=12)
-
-
-
-
 ```
-
-# Try to normalize the histograms within groups of d:
-
-```{r}
-
-
-
-
-```
-
-
 
 
 
