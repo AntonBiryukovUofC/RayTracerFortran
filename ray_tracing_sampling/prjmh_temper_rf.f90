@@ -625,8 +625,11 @@ objnew1 = obj
 CALL RANDOM_NUMBER(ran_uni_BD)
 i_bd = 0
 !! Do BIRTH-DEATH MCMC with 0.5 probability
+!print *,'kmin = ',kmin
+!print *,'kmax = ',kmax
+
 IF(kmin /= kmax)THEN
-  STOP
+  !STOP
   !! Perturbing k:
   CALL RANDOM_NUMBER(ran_unik)
   IF(obj%k == kmax)THEN  

@@ -12,11 +12,11 @@
  0   ! ISMPPRIOR
  0   ! ISETSEED
  1   ! IEXCHANGE
- 20  ! NDAT_RT   !! No. RT data
+ 200  ! NDAT_RT   !! No. RT data
  1   ! NMODE      !! No. RT modes (Phases in our case)
- 20  ! NSRC       !! No. of raypaths computed 
- 3   ! NLMN       !! Min number of layers
- 3  ! NLMX       !! Max number of layers
+ 200  ! NSRC       !! No. of raypaths computed 
+ 1   ! NLMN       !! Min number of layers
+ 10  ! NLMX       !! Max number of layers
  5   ! ICHAINTHIN !! Chain thinning interval
  100 ! NKEEP      !! No. models to keep before writing
  1   ! NPTCHAINS1 !! Number of chains with T=1

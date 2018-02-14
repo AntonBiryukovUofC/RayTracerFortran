@@ -95,6 +95,16 @@ module raymod
        ! print *, 'Source in the top layer'
         timeP = sqrt(src_depth**2+src_offset**2)/vp(nl_src)
         conv=.TRUE.
+        if (keep_delta > 0) then
+           d = src_offset
+           open(unit=1,file='rays.dat',form="FORMATTED",status='OLD',action='READWRITE',position='append')
+           write(unit=1,FMT=*) d
+           write(unit=1,FMT=*) src_depth
+           !write(unit=1,FMT=*) ""
+           close(1)
+        end if
+
+
     else
         ! Here we actually need to do ray-tracing
         conv=.FALSE.

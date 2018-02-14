@@ -67,12 +67,12 @@ CLOSE(20)
 !  baz2 = baz2 * 180._RP / PI2
 !ENDIF
 
-!kmin = NLMN
-!kmax = NLMX
+kmin = NLMN
+kmax = NLMX
 !! HARDWIRE TO FIXED-D PROBLEM
 !! k always refers to No. layers (halfspace is extra) 
-kmin = 8
-kmax = 8
+!kmin = 8
+!kmax = 8
 
 !! Poisson Prior on k:
 ALLOCATE(pk(kmax))

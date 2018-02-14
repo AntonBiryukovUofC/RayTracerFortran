@@ -130,6 +130,9 @@ makeMAPFile <- function(param.list = NA, output.file ="~/RayTracerFortran/RayTra
   MAP.row[1] <- param.list$MAP.k
   MAP.row[2:(2*param.list$MAP.k+2)] <- map.vd
   MAP.row[(2*param.list$MAP.k+2)] <- param.list$MAP.sd
+  
+  MAP.row[(param.list$NPL * param.list$NLMX+2)] <- param.list$MAP.sd
+  
   fmt <- paste0(c('%d',rep(' %3.2f',2*n.entries-1)) ,collapse = '')
   MAP.row.char <- do.call(sprintf, c(list(fmt), MAP.row))
   
@@ -142,6 +145,27 @@ makeMAPFile <- function(param.list = NA, output.file ="~/RayTracerFortran/RayTra
   return(MAP.row.char)
   
   
+}
+
+
+drawProfiles.TD <- function(x,NLayers=NA,NLMax = 10)
+{
+  d=as.numeric(x[(NLMax+1) : ( NLMax+NLayers )])
+  v=as.numeric(x[1:(NLayers)])
+  f <- approxfun(d,v,method = "constant")
+  dnew <- seq(1,8000,length.out = 200)
+  vnew <- f(dnew)
+  vnew[is.na(vnew)] = v[length(v)]
+  dd <- d[-1]
+  for (i in seq(length(dd)) )
+  {
+    ptsX=seq(from=min(v[i],v[i+1]),to = max(v[i],v[i+1]),by=40)
+    ptsY=rep(dd[i],length(ptsX))
+    dnew=c(dnew,ptsY)
+    vnew=c(vnew,ptsX)
+  }
+  prof <-tbl_df(data.frame(d=dnew,v=vnew))
+  return(prof)
 }
 
 
