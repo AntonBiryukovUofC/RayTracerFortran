@@ -152,8 +152,12 @@ MODULE RJMCMC_COM
 !!
 !! Parallel Tempering parameters
 !!
+  INTEGER(KIND=IB)                         :: iburnin     = 5000    !! Burnin iterations
   INTEGER(KIND=IB)                         :: NPTCHAINS1            !! # chains T=1
   REAL(KIND=RP)                            :: dTlog                 ! Temperature increment
+  REAL(KIND=RP)                            :: acceptance_rate = 0.25 !! acceptance_rate of PT exchange
+  INTEGER(KIND=IB)                         :: acceptance_window = 150     !! # of steps to calculate the acceptance rate over
+  
   INTEGER(KIND=IB)                         :: NT                    !! # tempering levels (temperatures)
   INTEGER(KIND=IB)                         :: NPTCHAINS             !! # parallel tempering chains
   INTEGER(KIND=IB),ALLOCATABLE,DIMENSION(:):: NCHAINT
@@ -187,7 +191,7 @@ MODULE RJMCMC_COM
 !! RJMCMC parameters
 !!
    INTEGER(KIND=IB),PARAMETER    :: NCHAIN     = 1E5_IB  ! # iterations (max # MCMC steps)
-   INTEGER(KIND=IB)              :: ICHAINTHIN = 5E0_IB  ! Chain thinning interval
+   INTEGER(KIND=IB)              :: ICHAINTHIN = 1E1_IB  ! Chain thinning interval
    !INTEGER(KIND=IB)              :: NKEEP      = 1E1_IB  ! Number models to keep before writing
    INTEGER(KIND=IB)              :: NKEEP      = 1E1_IB  ! Number models to keep before writing
    

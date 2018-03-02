@@ -23,9 +23,8 @@ The repository contains both the scripts that invoke the "workhorse" functions, 
 
 I will populate later this section, after I "clean" this repository. For now, look at the details in **rayTracerR.R**.
 
-# TODO:
-
 ## Parallel tempering Fortran codes:
+
 9. in the filebase.txt, first line is string length, second line is the string to be prepended to all filenames.
 13. mapfile : (transpose these rows into a long one row file)
 
@@ -40,5 +39,8 @@ vp  -- for halfspace
 0
 0
 
-The total number of entries is ncount2 (from the main code file)
-19. Feed through the array sizes in my subroutine-R
+
+# TODO:
+
+iaccept into TEMPSWP for neighbours ( check the difference in beta equal to dTlog)
+running covariance matrix

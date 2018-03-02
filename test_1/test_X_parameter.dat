@@ -20,7 +20,7 @@
  5   ! ICHAINTHIN !! Chain thinning interval
  100 ! NKEEP      !! No. models to keep before writing
  1   ! NPTCHAINS1 !! Number of chains with T=1
- 1.2 ! dTlog      !! Temperature increment
+ 1.1 ! dTlog      !! Temperature increment
  3.01  ! lambda     !! Lambda for Poisson prior on k
  10000.1 ! hmx        !! Max. partition depth
  100.1  ! hmin       !! Min. layer thickness (must be small enough to not violate detailed balance)

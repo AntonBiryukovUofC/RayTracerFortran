@@ -313,6 +313,9 @@ IF(rank == src)WRITE(6,*) 'Starting RJMCMC sampling...'
 !!
 !!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!
 !!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!
+
+acceptance_rate=0.25
+
 IF(rank==src)THEN
 ncswap = 0
 ncswapprop = 0
@@ -338,13 +341,14 @@ DO imcmc = 1,NCHAIN
     !print *, objm(2)%voroidx
     
     IF(IEXCHANGE == 1) THEN
+      !print *, 'Start Swapping'
       CALL TEMPSWP_MH(objm(1),objm(2))
     !IF(IAR == 1)CALL UDATE_SDAVE(objm(1),objm(2))
     ENDIF
     CALL MPI_SEND(objm(1), 1,objtype1, isource1, rank, MPI_COMM_WORLD, ierr)
     CALL MPI_SEND(objm(2), 1,objtype2, isource2, rank, MPI_COMM_WORLD, ierr)
     tend = MPI_WTIME()
-    
+    !print *, 'End Swapping'
   ENDDO
 
 !  t_chckpt2 = MPI_WTIME()
@@ -356,7 +360,34 @@ DO imcmc = 1,NCHAIN
 !    t_chckpt1 = MPI_WTIME()
 !  ENDIF
 
-  CALL SAVESAMPLE(objm,ikeep,isource1,isource2,REAL(tend-tstart,RP))
+  IF ((imcmc < iburnin) .AND. (ncswapprop == 0)) then
+  ! Check if the acceptance rate is within the range 0.2-0.3
+  ! If not, then adjust the dTlog:
+    print *, 'Acc.Rate ', acceptance_rate,' dTlog ', dTlog
+    IF (acceptance_rate < 0.2) then 
+       dTlog = dTlog*1.02
+       ENDIF
+    IF (acceptance_rate > 0.5) then
+        dTlog = dTlog*0.98
+        ENDIF
+  
+  ! ...and reassign the betas:
+  it2 = 1_IB
+  DO it=1,NT
+    DO ic=1,NCHAINT(it)
+      beta_pt(it2) = 1._RP/dTlog**REAL(it-1_IB,RP)
+      WRITE(6,218) 'Chain ',it2,':  beta = ',beta_pt(it2),'  T = ',1._RP/beta_pt(it2)
+      it2 = it2 + 1
+    ENDDO
+  ENDDO
+  ENDIF
+
+
+
+! If we passed the burn-in regime, then we can store the sample:
+  IF (imcmc > iburnin) then
+    CALL SAVESAMPLE(objm,ikeep,isource1,isource2,REAL(tend-tstart,RP)) 
+  ENDIF
 
 !   tstartsnd = MPI_WTIME()
 !   CALL SAVESAMPLE(logLG,isource,tcmp)
@@ -387,11 +418,17 @@ ELSE
 tstart = MPI_WTIME()
 
 DO imcmc = 1,NCHAIN
+ ! print *,'rank',rank ,'iter = ',imcmc
+  ! reassign betas here while burn-in:
+  if (imcmc < iburnin) then
+  obj%beta = beta_pt(rank)
+  endif
 
   !!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!
   !!                      EXPLORE CALLS
  ! print *,'slave1'
   DO ithin = 1,1
+    !if (rank == 1) print *, ' Exploring Start'
     !! BD MH for fixed complexity:
     IF (I_VARPAR == 0)THEN 
       CALL EXPLORE_MH_NOVARPAR(obj,objnew,obj%beta)
@@ -404,6 +441,7 @@ DO imcmc = 1,NCHAIN
 
     ENDIF
 !print *,'slave2'
+ ! if (rank == 1) print *, ' Exploring End'
   ENDDO
   !! MH for non partition parameters:
   CALL EXPLORE_MH(obj,objnew,obj%beta)
@@ -1334,6 +1372,14 @@ IF(ran_uni1 <= EXP(logratio))THEN
 ENDIF
 ncswapprop    = ncswapprop+1_IB
 
+! If we tried to propose acceptance_window times, then nullify the rates to evaluate the rolling acceptance rate:
+if (ncswapprop>acceptance_window) then
+  acceptance_rate = REAL(ncswap,RP)/REAL(ncswapprop,RP)
+  ncswapprop=0
+  ncswap = 0
+endif
+
+
 RETURN
 END SUBROUTINE TEMPSWP_MH
 !=======================================================================
@@ -1802,7 +1848,7 @@ DO ic = 1,2
     !!
     !! Write to stdout
     !!
-    IF(MOD(imcmc1,20*NKEEP) == 0)THEN
+    IF(MOD(imcmc1,5*NKEEP) == 0)THEN
       tsave2 = MPI_WTIME()
                         WRITE(*,213)'          iaccept_bd = ',objm(ic)%iaccept_bd,objm(ic)%beta
       IF(IEXCHANGE == 1)WRITE(*,215)'       T swap accept = ',REAL(ncswap,RP)/REAL(ncswapprop,RP),isource1,isource2

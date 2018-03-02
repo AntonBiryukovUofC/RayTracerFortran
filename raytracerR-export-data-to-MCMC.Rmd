@@ -41,9 +41,9 @@ print(src.to.write)
 or randomly..:
 
 ```{r}
-NSrc <- 5*20*2
+NSrc <- 20
 set.seed(12)
-src.df <- tibble(z=runif(NSrc,min=3050,max=4200),x=runif(NSrc,min=10,max=6500),y=runif(NSrc,min=10,max=4500))
+src.df <- tibble(z=runif(NSrc,min=1050,max=4200),x=runif(NSrc,min=10,max=6500),y=runif(NSrc,min=10,max=4500))
 srcd <- src.df$z
 srco <- sqrt(src.df$x**2+src.df$y**2)
 src.to.write <- tibble(offset = srco,depth=srcd)
@@ -51,7 +51,7 @@ src.to.write <- tibble(offset = srco,depth=srcd)
 
 ## Setup velocity model
 
-Simple three-layered model here:
+Simple N-layered model here:
 
 ```{r fig.height=5, fig.width=2}
 #v <- c(2501,3800,4900,4000,4000)  
@@ -73,7 +73,7 @@ NLayersMax <- 10
 
 
 
-## Run forward model and save the 
+## Run forward model and save the times
 
 ```{r}
 kd <- 10 # keep rays in rays.dat ???
@@ -162,7 +162,6 @@ chain.melted <- melt(chain.df,id.vars = 'iter') %>% filter(variable %in% var.to.
 p <- ggplot(data = chain.melted,aes(x=value,group = variable)) + geom_histogram(bins=100) + facet_wrap(~variable,scales = 'free',ncol = 4) + geom_vline(aes(xintercept=value),data = true.model,col = 'salmon',size=1.2)
 p.traces <- ggplot(data = chain.melted,aes(x=iter,group = variable,y=value)) + geom_line() + facet_wrap(~variable,scales = 'free',ncol = 1)
 print(p)
-
 print(p.traces)
 ggsave(sprintf('/home/geoanton/RayTracerFortran/RayTracer/%s/%s_marginals.png',base.name,base.name),p,width = 12,height=4)
 ggsave(sprintf('/home/geoanton/RayTracerFortran/RayTracer/%s/%s_traces.png',base.name,base.name ),p.traces,width = 12,height=k*2)
@@ -210,8 +209,6 @@ k.layer <- chain.df %>% select(k)
 samples.thinned <- as.matrix(samples[seq(burnin,nrow(samples),by=thin),1:ncol(samples)])
 k.layer <- as.matrix(k.layer[seq(burnin,nrow(samples),by=thin),])
 
-
-
 profs <-do.call("rbind",pblapply(seq(nrow(samples.thinned)), function(i) {df <- drawProfiles.TD(samples.thinned[i,],k.layer[i],param.list$NLMX);df$id=i;return(tbl_df(df))},cl=4)) %>% tbl_df()
 
 prof.plot <- ggplot(data = profs,aes(x=v,y=d)) + geom_bin2d(bins =100) + labs(x = "Vel [m/s]",y = "Depth [m]")+ 
@@ -231,7 +228,7 @@ p.norm<- ggplot(data = newdat.norm,aes(x=x,y=y,fill=val.norm)) + geom_raster() +
               theme(panel.background = element_rect(fill=alpha("#00007F",0.5), colour=alpha("#00007F",0.02)),panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
               scale_fill_gradientn(colors = jet.colors(500))+ geom_path(aes(x=v,y=-d), data = df.vd,inherit.aes = F,col='black',linetype = 2,size=2) +
               geom_point(aes(x=max(profs.p$v),y=-srcd), data = src.to.write,inherit.aes = F,col='white',pch=2,size=2)
-p.k <- ggplot(data = chain.df,aes(x=factor(k) )) + geom_histogram(stat='count') + geom_vline(xintercept = param.list$MAP.k,col='salmon')
+p.k <- ggplot(data = chain.df,aes(x=k )) + geom_histogram(stat='count') + geom_vline(xintercept = param.list$MAP.k,col='salmon')
 
 p.grid <- arrangeGrob(p.norm,p.k,heights = c(0.8,0.2),nrow = 2)
 ggsave( sprintf('/home/geoanton/RayTracerFortran/RayTracer/test_1/%s_profiles-transD.png',base.name),p.grid,width = 5,height=12)

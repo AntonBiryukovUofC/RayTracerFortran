@@ -51,8 +51,8 @@ REAL(KIND=RP),DIMENSION(NDAT_RT)     :: DpredRT
 REAL(KIND=RP),DIMENSION(NMODE)        :: EtmpRT
 REAL(KIND=RP)                         :: logL,factvs,factvpvs
 REAL(KIND=RP)                         :: tstart, tend, tcmp   ! Overall time 
-REAL(KIND=RP),DIMENSION(obj%k)     :: vels
-REAL(KIND=RP),DIMENSION(obj%k-1)     :: thickness
+REAL(KIND=RP),DIMENSION(:),ALLOCATABLE     :: vels
+REAL(KIND=RP),DIMENSION(:),ALLOCATABLE     :: thickness
 
 LOGICAL :: ISNAN
 
@@ -121,17 +121,40 @@ ENDIF
 !     curmod2(1:obj%nunique+1+NPREM,3)/1000.,curmod2(1:obj%nunique+1+NPREM,4)/1000.,&
 !     curmod2(1:obj%nunique+1+NPREM,1)/1000.,DpredRT,&
 !     periods,NDAT_RT,ierr_rt)
+
+
+
 DpredRT=0
-vels = obj%voro(1:(obj%k),2) ! Retrieve P-wave velocities here (alphas)
-thickness = obj%ziface(1:(obj%k-1)) ! Retrieve Layer thicknesses
+if (obj%k > 1 ) then
+
+    ALLOCATE(vels(obj%k))
+    ALLOCATE(thickness(obj%k-1))
+
+    vels = obj%voro(1:(obj%k),2) ! Retrieve P-wave velocities here (alphas)
+    thickness = obj%ziface(1:(obj%k-1)) ! Retrieve Layer thicknesses
+    CALL TraceRays(vels,thickness,obj%k-1,src_offset,src_depth,NSRC,DpredRT,-1)
+
+else    ! Special case when there is no layers, but one half-space
+   ! print *, ' Special case !'
+    ALLOCATE(vels(2))
+    ALLOCATE(thickness(1))
+    thickness = (/9999.9_RP/)
+    vels(1) = obj%voro(obj%k,2)
+    vels(2) = obj%voro(obj%k,2)
+    CALL TraceRays(vels,thickness,obj%k,src_offset,src_depth,NSRC,DpredRT,-1)
+   ! print *,DpredRT
+ENDIF
 !print *,'About to calc LL'
 !print *,'obj%k = ',obj%k
-!print *,'vels =',vels
-!print *,'thickness =',thickness
 !print *, ' src_offsets = ',src_offset
 !print *, ' src_depths = ',src_depth
-CALL TraceRays(vels,thickness,obj%k-1,src_offset,src_depth,NSRC,DpredRT,-1)
+!if (rank ==1) print *,'Started tracing...'
+!if (rank ==1) print *,'vels =',vels
+!if (rank ==1) print *,'thickness =',thickness
+!if (rank ==1) print *,'obj-k =',obj%k
 
+!CALL TraceRays(vels,thickness,obj%k-1,src_offset,src_depth,NSRC,DpredRT,-1)
+!if (rank ==1) print *,'Ended tracing!..'
 !print *,'timesP =',DpredRT
 ierr_rt=0 ! Temporarily here ~~~~~~~~~~~~~~~~~~~~~~~~~
 IF(ierr_rt /= 0)THEN
